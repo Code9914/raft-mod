@@ -435,7 +435,6 @@ namespace RaftMod
 
         // ──────────────── EXTRA TAB ────────────────
         private Vector2 _escroll;
-        private int _outfitIndex;
         private int _selectedLandmark;
         private void DrawExtraTab()
         {
@@ -453,15 +452,7 @@ namespace RaftMod
             if (Button("Unlock All Frequencies", "Activate all radio frequencies")) Extra.UnlockAllFrequencies();
             if (Button("Finish All Quests", "Complete all story quests instantly")) Extra.FinishAllQuests();
 
-            Section("Appearance");
             if (Button("Unlock All Characters", "Unlock every playable character")) Extra.UnlockAllCharacters();
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Outfit:", GUILayout.Width(50));
-            _outfitIndex = (int)GUILayout.HorizontalSlider((float)_outfitIndex, 0f, 10f, _skin.horizontalSlider, _skin.horizontalSliderThumb, GUILayout.Height(16));
-            if (GUILayout.Button("Apply", GUILayout.Width(50), GUILayout.Height(20)))
-                Extra.ApplyOutfit(_outfitIndex);
-            GUILayout.EndHorizontal();
-            LabelValue("Current", _outfitIndex.ToString());
 
             Section("Plants");
             if (Button("Instant Grow All Plants", "Skip growth time for all planted crops")) Extra.InstantGrowPlants();

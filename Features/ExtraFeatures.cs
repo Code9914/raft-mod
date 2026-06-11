@@ -170,17 +170,6 @@ namespace RaftMod
             catch (Exception ex) { Plugin.Log.LogError($"UnlockChars: {ex.Message}"); }
         }
 
-        public void ApplyOutfit(int index)
-        {
-            try
-            {
-                var net = LocalPlayer;
-                if (net != null)
-                    net.ApplyOutfit(index);
-            }
-            catch (Exception ex) { Plugin.Log.LogError($"Outfit: {ex.Message}"); }
-        }
-
         // ──── QUESTS ────
 
         public void FinishAllQuests()

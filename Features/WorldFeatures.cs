@@ -8,7 +8,7 @@ namespace RaftMod
         public bool NoEnemies;
         public bool NoShark;
         public bool AlwaysDay;
-        public float TargetHour = 12f;
+        public float TargetHour = 8f;
         public float TimeSpeed = 1f;
 
         private AI_NetworkBehaviour[] _cachedEnemies = new AI_NetworkBehaviour[0];
@@ -154,8 +154,8 @@ namespace RaftMod
             if (_cachedSky?.skyController != null)
             {
                 var hour = _cachedSky.skyController.timeOfDay.hour;
-                if (hour < 6f || hour > 20f)
-                    _cachedSky.skyController.timeOfDay.GotoTime(12f);
+                if (hour < 6f || hour > 18f)
+                    _cachedSky.skyController.timeOfDay.GotoTime(8f);
             }
         }
 
