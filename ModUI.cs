@@ -15,16 +15,28 @@ namespace RaftMod
         private float _readyTimer;
         private Rect _windowRect = new Rect(50, 50, 470, 700);
 
-        private readonly string[] _tabs = { "Player", "Items", "World", "Raft", "Extra" };
+        private readonly string[] _tabs = { "Player", "Items", "World", "Raft", "Extra", "Controls" };
 
         private GUISkin _skin;
         private bool _skinInit;
         private Texture2D _texAccent;
-        private string _tooltipText = "";
         private List<Item_Base> _itemCache;
         private float _itemCacheTimer;
         private GUIStyle _rowEven;
         private GUIStyle _rowOdd;
+
+        private class KeyBind
+        {
+            public string Id;
+            public string Label;
+            public string Tooltip;
+            public KeyCode DefaultKey;
+            public KeyCode CurrentKey;
+            public Action Action;
+        }
+
+        private List<KeyBind> _keyBinds;
+        private int _listeningIdx = -1;
 
         public PlayerFeatures Player { get; } = new PlayerFeatures();
         public ItemFeatures Item { get; } = new ItemFeatures();
@@ -202,6 +214,7 @@ namespace RaftMod
                     {
                         _gameReady = true;
                         Extra.MenuOpen = false;
+                        InitKeyBinds();
                         Plugin.Log.LogInfo("Mod UI ready!");
                     }
                 }
@@ -220,12 +233,36 @@ namespace RaftMod
                 return;
             }
 
+            if (_listeningIdx >= 0)
+            {
+                if (Input.anyKeyDown)
+                {
+                    foreach (KeyCode k in System.Enum.GetValues(typeof(KeyCode)))
+                    {
+                        if (Input.GetKeyDown(k))
+                        {
+                            if (k == KeyCode.Escape)
+                            {
+                                _listeningIdx = -1;
+                                break;
+                            }
+                            _keyBinds[_listeningIdx].CurrentKey = k;
+                            PlayerPrefs.SetInt("kb_" + _keyBinds[_listeningIdx].Id, (int)k);
+                            PlayerPrefs.Save();
+                            _listeningIdx = -1;
+                            break;
+                        }
+                    }
+                }
+                return;
+            }
+
             try
             {
-                if (Input.GetKeyDown(KeyCode.F5))
+                for (int i = 0; i < _keyBinds.Count; i++)
                 {
-                    _showMenu = !_showMenu;
-                    Extra.MenuOpen = _showMenu;
+                    if (_keyBinds[i].CurrentKey != KeyCode.None && Input.GetKeyDown(_keyBinds[i].CurrentKey))
+                        _keyBinds[i].Action();
                 }
             }
             catch { }
@@ -235,6 +272,27 @@ namespace RaftMod
             try { World.Update(); } catch (Exception ex) { Plugin.Log.LogError($"World: {ex.Message}"); }
             try { Raft.Update(); } catch (Exception ex) { Plugin.Log.LogError($"Raft: {ex.Message}"); }
             try { Extra.Update(); } catch (Exception ex) { Plugin.Log.LogError($"Extra: {ex.Message}"); }
+        }
+
+        private void InitKeyBinds()
+        {
+            if (_keyBinds != null) return;
+
+            _keyBinds = new List<KeyBind>();
+
+            void Add(string id, string label, string tooltip, KeyCode defaultKey, Action action)
+            {
+                var saved = (KeyCode)PlayerPrefs.GetInt("kb_" + id, (int)defaultKey);
+                _keyBinds.Add(new KeyBind { Id = id, Label = label, Tooltip = tooltip, DefaultKey = defaultKey, CurrentKey = saved, Action = action });
+            }
+
+            Add("menu_toggle", "Toggle Menu", "Open/close the mod menu", KeyCode.F5, () => { _showMenu = !_showMenu; Extra.MenuOpen = _showMenu; });
+            Add("noclip", "Noclip", "Toggle noclip/fly mode", KeyCode.None, () => { Player.NoClip = !Player.NoClip; });
+            Add("godmode", "God Mode", "Toggle god mode", KeyCode.None, () => { Player.GodMode = !Player.GodMode; });
+            Add("coordinates", "Show Coordinates", "Toggle coordinates HUD", KeyCode.None, () => { Extra.ShowCoordinates = !Extra.ShowCoordinates; });
+            Add("thirdperson", "Third Person", "Toggle third person camera", KeyCode.None, () => { Extra.ThirdPerson = !Extra.ThirdPerson; });
+            Add("infinite_items", "Infinite Items", "Toggle infinite items", KeyCode.None, () => { Item.InfiniteItems = !Item.InfiniteItems; });
+            Add("creative", "Creative Mode", "Toggle creative mode", KeyCode.None, () => { Extra.SetCreativeMode(!Extra.IsCreativeMode()); });
         }
 
         public void OnGUI()
@@ -270,11 +328,6 @@ namespace RaftMod
 
             DrawTabBar();
             DrawCurrentTab();
-
-            _tooltipText = GUI.tooltip;
-
-            GUILayout.Space(4);
-            DrawCloseButton();
 
             GUILayout.EndVertical();
 
@@ -322,29 +375,8 @@ namespace RaftMod
                 case 2: DrawWorldTab(); break;
                 case 3: DrawRaftTab(); break;
                 case 4: DrawExtraTab(); break;
+                case 5: DrawControlsTab(); break;
             }
-        }
-
-        private void DrawCloseButton()
-        {
-            var origBg = GUI.backgroundColor;
-            var origContent = GUI.contentColor;
-            GUI.backgroundColor = new Color(0.35f, 0.08f, 0.12f);
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(8);
-            GUI.contentColor = PurpleMuted;
-            GUILayout.Label("v1.1", GUILayout.Width(36), GUILayout.Height(14));
-            GUI.contentColor = Color.white;
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button(new GUIContent("Close (F5)", "Close the mod menu"), GUILayout.Width(120), GUILayout.Height(22)))
-                _showMenu = false;
-            GUILayout.FlexibleSpace();
-            GUI.contentColor = PurpleMuted;
-            GUILayout.Label(string.IsNullOrEmpty(_tooltipText) ? "F5 to toggle" : _tooltipText, GUILayout.Width(100), GUILayout.Height(14));
-            GUI.contentColor = origContent;
-            GUILayout.Space(8);
-            GUILayout.EndHorizontal();
-            GUI.backgroundColor = origBg;
         }
 
         // ──────────────── PLAYER TAB ────────────────
@@ -558,6 +590,49 @@ namespace RaftMod
             else
             {
                 GUILayout.Label("No landmarks found nearby");
+            }
+
+            GUILayout.EndScrollView();
+        }
+
+        private Vector2 _cscroll;
+        private void DrawControlsTab()
+        {
+            _cscroll = GUILayout.BeginScrollView(_cscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
+
+            Section("Key Bindings");
+            GUILayout.Space(2);
+            var origC = GUI.contentColor;
+            GUI.contentColor = PurpleMuted;
+            GUILayout.Label("Click a key to rebind. Press ESC to cancel.");
+            GUI.contentColor = origC;
+            GUILayout.Space(4);
+
+            for (int idx = 0; idx < _keyBinds.Count; idx++)
+            {
+                var kb = _keyBinds[idx];
+                var isListening = _listeningIdx == idx;
+                var rowStyle = idx % 2 == 0 ? _rowEven : _rowOdd;
+
+                GUILayout.BeginHorizontal(rowStyle ?? GUIStyle.none, GUILayout.Height(26));
+
+                GUILayout.Space(8);
+                GUILayout.Label(new GUIContent(kb.Label, kb.Tooltip), GUILayout.Width(150));
+
+                GUILayout.FlexibleSpace();
+
+                var keyLabel = isListening ? "Press a key..." : (kb.CurrentKey == KeyCode.None ? "None" : kb.CurrentKey.ToString());
+                var keyStyle = isListening ? _skin.label : _skin.button;
+                var keyWidth = isListening ? 120 : 90;
+
+                if (GUILayout.Button(keyLabel, keyStyle, GUILayout.Width(keyWidth), GUILayout.Height(22)))
+                {
+                    if (!isListening)
+                        _listeningIdx = idx;
+                }
+
+                GUILayout.Space(8);
+                GUILayout.EndHorizontal();
             }
 
             GUILayout.EndScrollView();
