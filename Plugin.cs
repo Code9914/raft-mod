@@ -4,7 +4,7 @@ using BepInEx.Logging;
 
 namespace RaftMod
 {
-    [BepInPlugin("raft.mod", "Raft Mod UI", "1.3.1")]
+    [BepInPlugin("raft.mod", "Raft Mod UI", "1.3.2")]
     public class Plugin : BaseUnityPlugin
     {
         internal static ManualLogSource Log;
