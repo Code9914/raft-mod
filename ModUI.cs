@@ -13,7 +13,7 @@ namespace RaftMod
         private int _currentTab;
         private bool _gameReady;
         private float _readyTimer;
-        private Rect _windowRect = new Rect(50, 50, 470, 650);
+        private Rect _windowRect = new Rect(50, 50, 470, 700);
 
         private readonly string[] _tabs = { "Player", "Items", "World", "Raft", "Extra" };
 
@@ -271,7 +271,6 @@ namespace RaftMod
             DrawTabBar();
             DrawCurrentTab();
 
-            GUILayout.FlexibleSpace();
             DrawCloseButton();
 
             GUILayout.Space(2);
@@ -350,7 +349,7 @@ namespace RaftMod
         private Vector2 _pscroll;
         private void DrawPlayerTab()
         {
-            _pscroll = GUILayout.BeginScrollView(_pscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.Height(_windowRect.height - 130));
+            _pscroll = GUILayout.BeginScrollView(_pscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
 
             Section("Health");
             Player.GodMode = Toggle(new GUIContent("God Mode", "Invincible, unlimited health and bonus HP"), Player.GodMode);
@@ -378,7 +377,7 @@ namespace RaftMod
         private string _itemSearch = "";
         private void DrawItemTab()
         {
-            _iscroll = GUILayout.BeginScrollView(_iscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.Height(_windowRect.height - 130));
+            _iscroll = GUILayout.BeginScrollView(_iscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
 
             Section("Inventory");
             Item.InfiniteItems = Toggle(new GUIContent("Infinite Items", "Keeps item stacks at 10"), Item.InfiniteItems);
@@ -453,7 +452,7 @@ namespace RaftMod
         private Vector2 _wscroll;
         private void DrawWorldTab()
         {
-            _wscroll = GUILayout.BeginScrollView(_wscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.Height(_windowRect.height - 130));
+            _wscroll = GUILayout.BeginScrollView(_wscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
 
             Section("Time");
             World.AlwaysDay = Toggle(new GUIContent("Always Day", "Forces time to noon"), World.AlwaysDay);
@@ -490,7 +489,7 @@ namespace RaftMod
         private Vector2 _rscroll;
         private void DrawRaftTab()
         {
-            _rscroll = GUILayout.BeginScrollView(_rscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.Height(_windowRect.height - 130));
+            _rscroll = GUILayout.BeginScrollView(_rscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
 
             Section("Raft Settings");
             InlineSlider("Max Speed", ref Raft.MaxSpeed, 1f, 30f, "");
@@ -512,7 +511,7 @@ namespace RaftMod
         private int _selectedLandmark;
         private void DrawExtraTab()
         {
-            _escroll = GUILayout.BeginScrollView(_escroll, GUILayout.Width(_windowRect.width - 28), GUILayout.Height(_windowRect.height - 130));
+            _escroll = GUILayout.BeginScrollView(_escroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
 
             Section("Game Mode");
             var wasCreative = Extra.IsCreativeMode();
