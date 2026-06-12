@@ -271,20 +271,13 @@ namespace RaftMod
             DrawTabBar();
             DrawCurrentTab();
 
-            DrawCloseButton();
-
-            GUILayout.Space(2);
-            var mutedColor = GUI.contentColor;
-            GUI.contentColor = PurpleMuted;
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("v1.1", GUILayout.Height(14));
-            GUILayout.FlexibleSpace();
-            GUILayout.Label(string.IsNullOrEmpty(_tooltipText) ? "F5 to toggle" : _tooltipText, GUILayout.Height(14));
-            GUILayout.EndHorizontal();
-            GUI.contentColor = mutedColor;
             _tooltipText = GUI.tooltip;
 
+            GUILayout.Space(4);
+            DrawCloseButton();
+
             GUILayout.EndVertical();
+
             GUI.DragWindow(new Rect(0, 0, _windowRect.width, 24));
         }
 
@@ -334,15 +327,24 @@ namespace RaftMod
 
         private void DrawCloseButton()
         {
-            var orig = GUI.backgroundColor;
+            var origBg = GUI.backgroundColor;
+            var origContent = GUI.contentColor;
             GUI.backgroundColor = new Color(0.35f, 0.08f, 0.12f);
             GUILayout.BeginHorizontal();
+            GUILayout.Space(8);
+            GUI.contentColor = PurpleMuted;
+            GUILayout.Label("v1.1", GUILayout.Width(36), GUILayout.Height(14));
+            GUI.contentColor = Color.white;
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button(new GUIContent("Close (F5)", "Close the mod menu"), GUILayout.Width(120), GUILayout.Height(24)))
+            if (GUILayout.Button(new GUIContent("Close (F5)", "Close the mod menu"), GUILayout.Width(120), GUILayout.Height(22)))
                 _showMenu = false;
-            GUILayout.Space(4);
+            GUILayout.FlexibleSpace();
+            GUI.contentColor = PurpleMuted;
+            GUILayout.Label(string.IsNullOrEmpty(_tooltipText) ? "F5 to toggle" : _tooltipText, GUILayout.Width(100), GUILayout.Height(14));
+            GUI.contentColor = origContent;
+            GUILayout.Space(8);
             GUILayout.EndHorizontal();
-            GUI.backgroundColor = orig;
+            GUI.backgroundColor = origBg;
         }
 
         // ──────────────── PLAYER TAB ────────────────
