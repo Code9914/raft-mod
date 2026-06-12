@@ -97,7 +97,7 @@ namespace RaftMod
                 else
                 {
                     if (net.flightCamera != null && net.flightCamera.enabled)
-                        net.flightCamera.Disable(false);
+                        net.flightCamera.Disable(true);
                 }
 
                 if (pc != null)
