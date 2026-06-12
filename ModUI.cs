@@ -246,6 +246,19 @@ namespace RaftMod
                                 _listeningIdx = -1;
                                 break;
                             }
+                            if (k == KeyCode.Delete || k == KeyCode.Backspace)
+                            {
+                                if (_keyBinds[_listeningIdx].Id == "menu_toggle")
+                                {
+                                    _listeningIdx = -1;
+                                    break;
+                                }
+                                _keyBinds[_listeningIdx].CurrentKey = KeyCode.None;
+                                PlayerPrefs.SetInt("kb_" + _keyBinds[_listeningIdx].Id, (int)KeyCode.None);
+                                PlayerPrefs.Save();
+                                _listeningIdx = -1;
+                                break;
+                            }
                             _keyBinds[_listeningIdx].CurrentKey = k;
                             PlayerPrefs.SetInt("kb_" + _keyBinds[_listeningIdx].Id, (int)k);
                             PlayerPrefs.Save();
@@ -604,7 +617,7 @@ namespace RaftMod
             GUILayout.Space(2);
             var origC = GUI.contentColor;
             GUI.contentColor = PurpleMuted;
-            GUILayout.Label("Click a key to rebind. Press ESC to cancel.");
+            GUILayout.Label("Click a key to rebind. ESC=cancel, DEL=clear.");
             GUI.contentColor = origC;
             GUILayout.Space(4);
 
@@ -617,13 +630,14 @@ namespace RaftMod
                 GUILayout.BeginHorizontal(rowStyle ?? GUIStyle.none, GUILayout.Height(26));
 
                 GUILayout.Space(8);
-                GUILayout.Label(new GUIContent(kb.Label, kb.Tooltip), GUILayout.Width(150));
+                var label = kb.Id == "menu_toggle" ? kb.Label + " *" : kb.Label;
+                GUILayout.Label(new GUIContent(label, kb.Tooltip), GUILayout.Width(150));
 
                 GUILayout.FlexibleSpace();
 
                 var keyLabel = isListening ? "Press a key..." : (kb.CurrentKey == KeyCode.None ? "None" : kb.CurrentKey.ToString());
                 var keyStyle = isListening ? _skin.label : _skin.button;
-                var keyWidth = isListening ? 120 : 90;
+                var keyWidth = isListening ? 145 : 90;
 
                 if (GUILayout.Button(keyLabel, keyStyle, GUILayout.Width(keyWidth), GUILayout.Height(22)))
                 {
