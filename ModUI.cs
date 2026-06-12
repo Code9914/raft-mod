@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace RaftMod
@@ -19,6 +21,8 @@ namespace RaftMod
         private bool _skinInit;
         private Texture2D _texAccent;
         private string _tooltipText = "";
+        private List<Item_Base> _itemCache;
+        private float _itemCacheTimer;
 
         public PlayerFeatures Player { get; } = new PlayerFeatures();
         public ItemFeatures Item { get; } = new ItemFeatures();
@@ -377,17 +381,48 @@ namespace RaftMod
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            if (Button("x1", "Spawn 1 of the searched item")) Item.SpawnItem(_itemSearch, 1);
-            if (Button("x10", "Spawn 10 of the searched item")) Item.SpawnItem(_itemSearch, 10);
-            if (Button("x50", "Spawn 50 of the searched item")) Item.SpawnItem(_itemSearch, 50);
-            GUILayout.EndHorizontal();
-
-            GUILayout.Space(6);
-            GUILayout.BeginHorizontal();
             if (Button("Food", "Give food items")) Item.GiveCategory("Food");
             if (Button("Weapons", "Give weapons and tools")) Item.GiveCategory("Weapon");
             if (Button("Materials", "Give building materials")) Item.GiveCategory("Material");
             GUILayout.EndHorizontal();
+
+            if (_itemCache == null || Time.time > _itemCacheTimer + 30f)
+            {
+                _itemCache = ItemManager.GetAllItems();
+                _itemCacheTimer = Time.time;
+            }
+
+            var filtered = string.IsNullOrEmpty(_itemSearch.Trim())
+                ? _itemCache
+                : _itemCache.Where(i =>
+                  {
+                      try { return i.UniqueName.IndexOf(_itemSearch, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                   i.settings_Inventory.DisplayName.IndexOf(_itemSearch, StringComparison.OrdinalIgnoreCase) >= 0; }
+                      catch { return false; }
+                  }).ToList();
+
+            foreach (var item in filtered)
+            {
+                var sprite = item.settings_Inventory?.Sprite;
+                var name = item.settings_Inventory?.DisplayName ?? item.UniqueName;
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Space(4);
+
+                var iconRect = GUILayoutUtility.GetRect(26, 26, GUILayout.Width(30));
+                if (sprite != null)
+                    DrawSprite(iconRect, sprite);
+
+                GUILayout.Space(4);
+                GUILayout.Label(name, GUILayout.Width(140));
+
+                if (GUILayout.Button("+1", GUILayout.Width(34), GUILayout.Height(22)))
+                    Item.SpawnItem(item.UniqueName, 1);
+                if (GUILayout.Button("+10", GUILayout.Width(36), GUILayout.Height(22)))
+                    Item.SpawnItem(item.UniqueName, 10);
+
+                GUILayout.EndHorizontal();
+            }
 
             GUILayout.EndScrollView();
         }
@@ -580,6 +615,21 @@ namespace RaftMod
             GUILayout.Label(value);
             GUI.contentColor = orig;
             GUILayout.EndHorizontal();
+        }
+
+        private static void DrawSprite(Rect rect, Sprite sprite)
+        {
+            if (sprite == null) return;
+            var tex = sprite.texture;
+            if (tex == null) return;
+            var r = sprite.textureRect;
+            var uv = new Rect(
+                r.x / tex.width,
+                r.y / tex.height,
+                r.width / tex.width,
+                r.height / tex.height
+            );
+            GUI.DrawTextureWithTexCoords(rect, tex, uv);
         }
     }
 }
