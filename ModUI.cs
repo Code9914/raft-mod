@@ -23,6 +23,8 @@ namespace RaftMod
         private string _tooltipText = "";
         private List<Item_Base> _itemCache;
         private float _itemCacheTimer;
+        private GUIStyle _rowEven;
+        private GUIStyle _rowOdd;
 
         public PlayerFeatures Player { get; } = new PlayerFeatures();
         public ItemFeatures Item { get; } = new ItemFeatures();
@@ -137,6 +139,21 @@ namespace RaftMod
 
             GUI.skin = _skin;
             _texAccent = MakeTexture(1, 1, Purple);
+
+            _rowEven = new GUIStyle
+            {
+                normal = { background = MakeTexture(1, 1, new Color(0.06f, 0.0f, 0.10f)) },
+                margin = new RectOffset(0, 0, 0, 0),
+                padding = new RectOffset(6, 2, 3, 3),
+                border = new RectOffset(1, 1, 1, 1)
+            };
+            _rowOdd = new GUIStyle
+            {
+                normal = { background = MakeTexture(1, 1, new Color(0.03f, 0.0f, 0.05f)) },
+                margin = new RectOffset(0, 0, 0, 0),
+                padding = new RectOffset(6, 2, 3, 3),
+                border = new RectOffset(1, 1, 1, 1)
+            };
         }
 
         private static Texture2D MakeTexture(int w, int h, Color c)
@@ -373,18 +390,19 @@ namespace RaftMod
             if (Button("Unlock All Blueprints", "Unlock all blueprints (may need save reload)")) Item.UnlockBlueprints = true;
 
             Section("Item Spawner");
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Search:", GUILayout.Width(50));
-            _itemSearch = GUILayout.TextField(_itemSearch);
-            if (GUILayout.Button("x", GUILayout.Width(22), GUILayout.Height(20)))
-                _itemSearch = "";
-            GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            if (Button("Food", "Give food items")) Item.GiveCategory("Food");
-            if (Button("Weapons", "Give weapons and tools")) Item.GiveCategory("Weapon");
-            if (Button("Materials", "Give building materials")) Item.GiveCategory("Material");
+            GUILayout.Space(4);
+            var orig = GUI.backgroundColor;
+            GUI.backgroundColor = new Color(0.15f, 0.05f, 0.25f);
+            _itemSearch = GUILayout.TextField(_itemSearch, GUILayout.ExpandWidth(true), GUILayout.Height(22));
+            GUI.backgroundColor = orig;
+            if (GUILayout.Button("x", GUILayout.Width(24), GUILayout.Height(22)))
+                _itemSearch = "";
+            GUILayout.Space(4);
             GUILayout.EndHorizontal();
+
+            GUILayout.Space(4);
 
             if (_itemCache == null || Time.time > _itemCacheTimer + 30f)
             {
@@ -401,26 +419,30 @@ namespace RaftMod
                       catch { return false; }
                   }).ToList();
 
-            foreach (var item in filtered)
+            for (int idx = 0; idx < filtered.Count; idx++)
             {
+                var item = filtered[idx];
                 var sprite = item.settings_Inventory?.Sprite;
                 var name = item.settings_Inventory?.DisplayName ?? item.UniqueName;
 
-                GUILayout.BeginHorizontal();
-                GUILayout.Space(4);
+                var rowStyle = idx % 2 == 0 ? _rowEven : _rowOdd;
+                GUILayout.BeginHorizontal(rowStyle ?? GUIStyle.none, GUILayout.Height(28));
 
-                var iconRect = GUILayoutUtility.GetRect(26, 26, GUILayout.Width(30));
+                var iconRect = GUILayoutUtility.GetRect(22, 22, GUILayout.Width(26));
                 if (sprite != null)
                     DrawSprite(iconRect, sprite);
 
-                GUILayout.Space(4);
+                GUILayout.Space(6);
                 GUILayout.Label(name, GUILayout.Width(140));
 
-                if (GUILayout.Button("+1", GUILayout.Width(34), GUILayout.Height(22)))
+                GUILayout.FlexibleSpace();
+
+                if (GUILayout.Button("+1", GUILayout.Width(32), GUILayout.Height(20)))
                     Item.SpawnItem(item.UniqueName, 1);
-                if (GUILayout.Button("+10", GUILayout.Width(36), GUILayout.Height(22)))
+                if (GUILayout.Button("+10", GUILayout.Width(34), GUILayout.Height(20)))
                     Item.SpawnItem(item.UniqueName, 10);
 
+                GUILayout.Space(2);
                 GUILayout.EndHorizontal();
             }
 
