@@ -170,15 +170,32 @@ namespace RaftMod
 
         public void Update()
         {
+            var player = ComponentManager<Network_Player>.Value;
+
             if (!_gameReady)
             {
-                _readyTimer += Time.deltaTime;
-                if (_readyTimer > 5f && ComponentManager<Network_Player>.Value != null)
+                if (player != null)
                 {
-                    _gameReady = true;
-                    Extra.MenuOpen = false;
-                    Plugin.Log.LogInfo("Mod UI ready!");
+                    _readyTimer += Time.deltaTime;
+                    if (_readyTimer > 5f)
+                    {
+                        _gameReady = true;
+                        Extra.MenuOpen = false;
+                        Plugin.Log.LogInfo("Mod UI ready!");
+                    }
                 }
+                else
+                {
+                    _readyTimer = 0f;
+                }
+                return;
+            }
+
+            if (player == null)
+            {
+                _gameReady = false;
+                _skinInit = false;
+                _readyTimer = 0f;
                 return;
             }
 
