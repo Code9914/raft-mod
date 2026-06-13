@@ -106,7 +106,7 @@ if exist "!BEPINEX_DIR!\core\BepInEx.dll" (
     )
 
     echo    Telechargement...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "$wc = New-Object Net.WebClient; $wc.Headers['User-Agent']='RaftMod-Installer'; try { $wc.DownloadFile('%BEPINEX_URL%', '%TEMP%\BepInEx.zip'); Write-Host 'OK' } catch { Write-Host $_.Exception.Message; exit 1 }"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object Net.WebClient; $wc.Headers['User-Agent']='RaftMod-Installer'; try { $wc.DownloadFile('%BEPINEX_URL%', '%TEMP%\BepInEx.zip'); Write-Host 'OK' } catch { Write-Host $_.Exception.Message; exit 1 }"
     if !ERRORLEVEL! neq 0 (
         echo    [ERREUR] Echec du telechargement BepInEx.
         pause
@@ -135,7 +135,7 @@ REM -- Etape 3 : Telechargement du mod --
 echo  [3/4] Telechargement du mod...
 echo    Source : %MOD_URL%
 echo.
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$wc = New-Object Net.WebClient; $wc.Headers['User-Agent']='RaftMod-Installer'; try { $wc.DownloadFile('%MOD_URL%', '%TEMP%\RaftMod.dll'); Write-Host 'OK' } catch { Write-Host $_.Exception.Message; exit 1 }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $wc = New-Object Net.WebClient; $wc.Headers['User-Agent']='RaftMod-Installer'; try { $wc.DownloadFile('%MOD_URL%', '%TEMP%\RaftMod.dll'); Write-Host 'OK' } catch { Write-Host $_.Exception.Message; exit 1 }"
 if !ERRORLEVEL! neq 0 (
     echo    [ERREUR] Echec du telechargement.
     echo.
