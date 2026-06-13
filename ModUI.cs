@@ -10,12 +10,13 @@ namespace RaftMod
         public static ModUI Instance { get; set; }
 
         private bool _showMenu;
+        private bool _lastShowMenu;
         private int _currentTab;
         private bool _gameReady;
         private float _readyTimer;
         private Rect _windowRect = new Rect(50, 50, 540, 710);
 
-        private readonly string[] _tabs = { "Player", "Items", "World", "Raft", "Extra", "Controls" };
+        private readonly string[] _tabs = { "Joueur", "Objets", "Monde", "Radeau", "Extra", "Contrôles" };
 
         private GUISkin _skin;
         private bool _skinInit;
@@ -116,7 +117,8 @@ namespace RaftMod
                 fontSize = 12,
                 border = new RectOffset(0, 0, 0, 0),
                 overflow = new RectOffset(0, 0, 0, 0),
-                fontStyle = FontStyle.Normal
+                fontStyle = FontStyle.Normal,
+                wordWrap = false
             };
 
             _skin.button = new GUIStyle(GUI.skin.button)
@@ -343,6 +345,19 @@ namespace RaftMod
             }
             catch { }
 
+            if (_showMenu != _lastShowMenu)
+            {
+                _lastShowMenu = _showMenu;
+            }
+
+            if (_showMenu && !Input.mousePresent)
+                return;
+
+            if (_showMenu && _windowRect.Contains(Input.mousePosition))
+            {
+                GUI.DragWindow(new Rect(_windowRect.x, _windowRect.y, _windowRect.width, 28));
+            }
+
             try { Player.Update(); } catch (Exception ex) { Plugin.Log.LogError($"Player: {ex.Message}"); }
             try { Item.Update(); } catch (Exception ex) { Plugin.Log.LogError($"Item: {ex.Message}"); }
             try { World.Update(); } catch (Exception ex) { Plugin.Log.LogError($"World: {ex.Message}"); }
@@ -362,13 +377,13 @@ namespace RaftMod
                 _keyBinds.Add(new KeyBind { Id = id, Label = label, Tooltip = tooltip, DefaultKey = defaultKey, CurrentKey = saved, Action = action });
             }
 
-            Add("menu_toggle", "Toggle Menu", "Open/close the mod menu", KeyCode.F5, () => { _showMenu = !_showMenu; Extra.MenuOpen = _showMenu; });
-            Add("noclip", "Noclip", "Toggle noclip/fly mode", KeyCode.None, () => { Player.NoClip = !Player.NoClip; });
-            Add("godmode", "God Mode", "Toggle god mode", KeyCode.None, () => { Player.GodMode = !Player.GodMode; });
-            Add("coordinates", "Show Coordinates", "Toggle coordinates HUD", KeyCode.None, () => { Extra.ShowCoordinates = !Extra.ShowCoordinates; });
-            Add("thirdperson", "Third Person", "Toggle third person camera", KeyCode.None, () => { Extra.ThirdPerson = !Extra.ThirdPerson; });
-            Add("infinite_items", "Infinite Items", "Toggle infinite items", KeyCode.None, () => { Item.InfiniteItems = !Item.InfiniteItems; });
-            Add("creative", "Creative Mode", "Toggle creative mode", KeyCode.None, () => { Extra.SetCreativeMode(!Extra.IsCreativeMode()); });
+            Add("menu_toggle", "Menu", "Ouvrir/fermer le menu du mod", KeyCode.F5, () => { _showMenu = !_showMenu; Extra.MenuOpen = _showMenu; });
+            Add("noclip", "Noclip", "Activer/d\u00e9sactiver le mode vol", KeyCode.None, () => { Player.NoClip = !Player.NoClip; });
+            Add("godmode", "Mode Dieu", "Activer/d\u00e9sactiver le mode invincible", KeyCode.None, () => { Player.GodMode = !Player.GodMode; });
+            Add("coordinates", "Coordonn\u00e9es", "Afficher/masquer les coordonn\u00e9es", KeyCode.None, () => { Extra.ShowCoordinates = !Extra.ShowCoordinates; });
+            Add("thirdperson", "3e Personne", "Activer/d\u00e9sactiver la cam\u00e9ra 3e personne", KeyCode.None, () => { Extra.ThirdPerson = !Extra.ThirdPerson; });
+            Add("infinite_items", "Items Infinis", "Activer/d\u00e9sactiver les objets infinis", KeyCode.None, () => { Item.InfiniteItems = !Item.InfiniteItems; });
+            Add("creative", "Mode Cr\u00e9atif", "Activer/d\u00e9sactiver le mode cr\u00e9atif", KeyCode.None, () => { Extra.SetCreativeMode(!Extra.IsCreativeMode()); });
         }
 
         public void OnGUI()
@@ -389,13 +404,13 @@ namespace RaftMod
             GUI.DrawTexture(new Rect(0, 0, _windowRect.width, _windowRect.height), _skin.window.normal.background);
 
             var headerRect = new Rect(0, 0, _windowRect.width, 28);
-            GUI.DrawTexture(new Rect(14, 26, 40, 2), _texAccent);
 
             var origC = GUI.contentColor;
             GUI.contentColor = TextDim;
-            GUI.Label(new Rect(14, 5, 200, 20), "Raft Mod Menu");
+            GUI.Label(new Rect(14, 5, 200, 20), "Menu Raft Mod");
             GUI.contentColor = Accent;
-            GUI.Label(new Rect(14, 17, 80, 12), "v1.6.0", new GUIStyle(_skin.label) { fontSize = 9 });
+            var verStyle = new GUIStyle(_skin.label) { fontSize = 9 };
+            GUI.Label(new Rect(_windowRect.width - 80, 7, 70, 16), Plugin.Version, verStyle);
             GUI.contentColor = origC;
 
             GUILayout.BeginHorizontal();
@@ -407,6 +422,13 @@ namespace RaftMod
             DrawCurrentTab();
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
+
+            var btnRect = new Rect(_windowRect.width - 80, 7, 72, 22);
+            if (GUI.Button(btnRect, "Fermer", _skin.button))
+            {
+                _showMenu = false;
+                Extra.MenuOpen = false;
+            }
 
             GUI.DragWindow(headerRect);
         }
@@ -462,32 +484,32 @@ namespace RaftMod
         {
             _pscroll = GUILayout.BeginScrollView(_pscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
-            Section("Health");
-            Player.GodMode = Toggle(new GUIContent("God Mode", "Invincible, unlimited health and bonus HP"), Player.GodMode);
-            if (Button("Heal Full", "Restore health and bonus HP to maximum")) Player.HealPlayer();
-            LabelValue("Health", $"{Player.GetHealth():F0}");
-            LabelValue("Bonus HP", $"{Player.GetBonusHealth():F0}");
+            Section("Sant\u00e9");
+            Player.GodMode = Toggle(new GUIContent("Mode Dieu", "Invincible, vie et bonus de sant\u00e9 illimit\u00e9s"), Player.GodMode);
+            if (Button("Soin Complet", "Restaure la sant\u00e9 et le bonus HP au max")) Player.HealPlayer();
+            LabelValue("Sant\u00e9", $"{Player.GetHealth():F0}");
+            LabelValue("HP Bonus", $"{Player.GetBonusHealth():F0}");
 
-            Section("Vitals");
-            Player.InfiniteOxygen = Toggle(new GUIContent("Infinite Oxygen", "Oxygen never depletes"), Player.InfiniteOxygen);
-            Player.InfiniteHunger = Toggle(new GUIContent("Infinite Hunger/Thirst", "Hunger and thirst stay full"), Player.InfiniteHunger);
-            Player.NoHungerLoss = Toggle(new GUIContent("No Hunger/Thirst Loss", "Disables hunger and thirst drain"), Player.NoHungerLoss);
+            Section("Survie");
+            Player.InfiniteOxygen = Toggle(new GUIContent("Oxyg\u00e8ne Infini", "L'oxyg\u00e8ne ne s'\u00e9puise jamais"), Player.InfiniteOxygen);
+            Player.InfiniteHunger = Toggle(new GUIContent("Faim/Soif Infinie", "La faim et la soif restent au max"), Player.InfiniteHunger);
+            Player.NoHungerLoss = Toggle(new GUIContent("Pas de Perte Faim/Soif", "D\u00e9sactive la baisse de faim et soif"), Player.NoHungerLoss);
 
-            Section("Movement");
-            Player.NoClip = Toggle(new GUIContent("Noclip / Fly Mode", "Free flight camera, no collision"), Player.NoClip);
-            InlineSlider("Speed", ref Player.MoveSpeed, 0.5f, 20f, "x");
-            InlineSlider("Jump", ref Player.JumpMultiplier, 0.5f, 10f, "x");
-            InlineSlider("Swim", ref Player.SwimMultiplier, 0.5f, 10f, "x");
-            InlineSlider("Gravity", ref Player.Gravity, 5f, 50f, "");
+            Section("D\u00e9placement");
+            Player.NoClip = Toggle(new GUIContent("Noclip / Vol", "Cam\u00e9ra libre, sans collision"), Player.NoClip);
+            InlineSlider("Vitesse", ref Player.MoveSpeed, 0.5f, 20f, "x");
+            InlineSlider("Saut", ref Player.JumpMultiplier, 0.5f, 10f, "x");
+            InlineSlider("Nage", ref Player.SwimMultiplier, 0.5f, 10f, "x");
+            InlineSlider("Gravit\u00e9", ref Player.Gravity, 5f, 50f, "");
 
             Section("Combat");
-            Player.InfDurability = Toggle(new GUIContent("Infinite Durability", "Tools and weapons never lose durability"), Player.InfDurability);
-            Player.NoFallDamage = Toggle(new GUIContent("No Fall Damage", "Disable all fall damage"), Player.NoFallDamage);
-            InlineSlider("Damage Multiplier", ref Player.DamageMultiplier, 0f, 20f, "x");
+            Player.InfDurability = Toggle(new GUIContent("Durabilit\u00e9 Infinie", "Les outils et armes ne perdent jamais de durabilit\u00e9"), Player.InfDurability);
+            Player.NoFallDamage = Toggle(new GUIContent("Pas de D\u00e9g\u00e2ts de Chute", "Annule tous les d\u00e9g\u00e2ts de chute"), Player.NoFallDamage);
+            InlineSlider("Multiplicateur D\u00e9g\u00e2ts", ref Player.DamageMultiplier, 0f, 20f, "x");
 
-            Section("Convenience");
-            Player.AutoPickup = Toggle(new GUIContent("Auto Pickup Items", "Automatically pick up nearby items"), Player.AutoPickup);
-            InlineSlider("Field of View", ref Player.FOV, 40f, 120f, "");
+            Section("Confort");
+            Player.AutoPickup = Toggle(new GUIContent("Ramassage Auto", "Ramasser automatiquement les objets proches"), Player.AutoPickup);
+            InlineSlider("Champ de Vision", ref Player.FOV, 40f, 120f, "");
 
             GUILayout.EndScrollView();
         }
@@ -499,16 +521,16 @@ namespace RaftMod
         {
             _iscroll = GUILayout.BeginScrollView(_iscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
-            Section("Inventory");
-            Item.InfiniteItems = Toggle(new GUIContent("Infinite Items", "Keeps item stacks at 10"), Item.InfiniteItems);
-            if (Button("Give All Items (1 each)", "Adds one of every item to your inventory")) Item.GiveAllItems = true;
-            if (DangerButton("Clear Inventory", "Removes all items from your inventory")) Item.ClearInventory();
+            Section("Inventaire");
+            Item.InfiniteItems = Toggle(new GUIContent("Objets Infinis", "Les piles d'objets restent \u00e0 10"), Item.InfiniteItems);
+            if (Button("Tous les Objets (1 chacun)", "Ajoute un exemplaire de chaque objet dans votre inventaire")) Item.GiveAllItems = true;
+            if (DangerButton("Vider l'Inventaire", "Supprime tous les objets de votre inventaire")) Item.ClearInventory();
 
-            Section("Research & Crafting");
-            if (Button("Unlock All Research", "Learn all crafting recipes instantly")) Item.UnlockAll = true;
-            if (Button("Unlock All Blueprints", "Unlock all blueprints (may need save reload)")) Item.UnlockBlueprints = true;
+            Section("Recherche & Artisanat");
+            if (Button("D\u00e9verrouiller toutes les Recherches", "Apprendre toutes les recettes d'artisanat")) Item.UnlockAll = true;
+            if (Button("D\u00e9verrouiller tous les Plans", "D\u00e9bloquer tous les plans (peut n\u00e9cessiter un rechargement)")) Item.UnlockBlueprints = true;
 
-            Section("Item Spawner");
+            Section("G\u00e9n\u00e9rateur d'Objets");
 
             GUILayout.BeginHorizontal();
             GUILayout.Space(4);
@@ -574,37 +596,37 @@ namespace RaftMod
         {
             _wscroll = GUILayout.BeginScrollView(_wscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
-            Section("Time");
-            World.AlwaysDay = Toggle(new GUIContent("Always Day", "Forces time to noon"), World.AlwaysDay);
-            LabelValue("Current Time", $"{World.GetCurrentHour():F1}h");
-            InlineSlider("Target", ref World.TargetHour, 0f, 24f, "h");
-            if (Button("Set Time", $"Set time to {World.TargetHour:F0}:00")) World.SetHour(World.TargetHour);
-            InlineSlider("Speed", ref World.TimeSpeed, 0f, 10f, "x");
+            Section("Temps");
+            World.AlwaysDay = Toggle(new GUIContent("Toujours le Jour", "Force l'heure \u00e0 midi"), World.AlwaysDay);
+            LabelValue("Heure Actuelle", $"{World.GetCurrentHour():F1}h");
+            InlineSlider("Cible", ref World.TargetHour, 0f, 24f, "h");
+            if (Button("D\u00e9finir l'Heure", $"R\u00e9gler l'heure sur {World.TargetHour:F0}:00")) World.SetHour(World.TargetHour);
+            InlineSlider("Vitesse", ref World.TimeSpeed, 0f, 10f, "x");
 
-            Section("Weather");
+            Section("M\u00e9t\u00e9o");
             GUILayout.BeginHorizontal();
-            if (Button("Clear", "Clear weather")) World.SetWeather(0);
-            if (Button("Rain", "Rainy weather")) World.SetWeather(1);
-            if (Button("Storm", "Heavy storm")) World.SetWeather(2);
+            if (Button("D\u00e9gag\u00e9", "Temps d\u00e9gag\u00e9")) World.SetWeather(0);
+            if (Button("Pluie", "Temps pluvieux")) World.SetWeather(1);
+            if (Button("Temp\u00eate", "Forte temp\u00eate")) World.SetWeather(2);
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            if (Button("Fog", "Foggy weather")) World.SetWeather(3);
-            if (Button("Snow", "Snowy weather")) World.SetWeather(4);
-            if (Button("Calm", "Calm seas")) World.SetWeather(5);
+            if (Button("Brouillard", "Temps brumeux")) World.SetWeather(3);
+            if (Button("Neige", "Temps neigeux")) World.SetWeather(4);
+            if (Button("Calme", "Mer calme")) World.SetWeather(5);
             GUILayout.EndHorizontal();
 
-            Section("Entities");
-            World.NoEnemies = Toggle(new GUIContent("No Enemies", "Auto-kills all enemies every second"), World.NoEnemies);
-            World.NoShark = Toggle(new GUIContent("Disable Shark", "Auto-kills Bruce the shark"), World.NoShark);
-            if (DangerButton("Kill All Enemies", "Instantly kill all enemies in the world")) World.KillAllEnemies();
+            Section("Entit\u00e9s");
+            World.NoEnemies = Toggle(new GUIContent("Pas d'Ennemis", "Tue automatiquement tous les ennemis chaque seconde"), World.NoEnemies);
+            World.NoShark = Toggle(new GUIContent("D\u00e9sactiver Requin", "Tue automatiquement Bruce le requin"), World.NoShark);
+            if (DangerButton("Tuer tous les Ennemis", "Tue instantan\u00e9ment tous les ennemis")) World.KillAllEnemies();
 
-            Section("Teleport");
-            if (Button("Teleport to Raft", "Teleport yourself to the raft")) World.TeleportToRaft();
-            if (Button("Teleport to Crosshair", "Teleport to where you are looking")) World.TeleportToCamera();
+            Section("T\u00e9l\u00e9portation");
+            if (Button("T\u00e9l\u00e9porter au Radeau", "Se t\u00e9l\u00e9porter sur le radeau")) World.TeleportToRaft();
+            if (Button("T\u00e9l\u00e9porter au Viseur", "Se t\u00e9l\u00e9porter l\u00e0 o\u00f9 vous regardez")) World.TeleportToCamera();
 
-            Section("Fishing");
-            World.InstantFish = Toggle(new GUIContent("Instant Fish", "Fish bites immediately when you cast"), World.InstantFish);
-            World.AutoCatch = Toggle(new GUIContent("Auto Catch", "Automatically reel in fish when hooked"), World.AutoCatch);
+            Section("P\u00eache");
+            World.InstantFish = Toggle(new GUIContent("Poisson Instantan\u00e9", "Le poisson mord d\u00e8s que vous lancez"), World.InstantFish);
+            World.AutoCatch = Toggle(new GUIContent("Attraper Auto", "Enroule automatiquement le poisson quand il mord"), World.AutoCatch);
 
             GUILayout.EndScrollView();
         }
@@ -615,20 +637,20 @@ namespace RaftMod
         {
             _rscroll = GUILayout.BeginScrollView(_rscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
-            Section("Raft Settings");
-            InlineSlider("Max Speed", ref Raft.MaxSpeed, 1f, 30f, "");
-            InlineSlider("Acceleration", ref Raft.Acceleration, 0.5f, 20f, "");
+            Section("Param\u00e8tres du Radeau");
+            InlineSlider("Vitesse Max", ref Raft.MaxSpeed, 1f, 30f, "");
+            InlineSlider("Acc\u00e9l\u00e9ration", ref Raft.Acceleration, 0.5f, 20f, "");
 
-            Section("Raft Actions");
-            if (Button("Teleport Raft to Player", "Brings the raft to your position")) Raft.TeleportToPlayer();
-            if (Button("Teleport Player to Raft", "Sends you back to the raft")) World.TeleportToRaft();
+            Section("Actions du Radeau");
+            if (Button("T\u00e9l\u00e9porter le Radeau au Joueur", "Am\u00e8ne le radeau \u00e0 votre position")) Raft.TeleportToPlayer();
+            if (Button("T\u00e9l\u00e9porter le Joueur au Radeau", "Vous renvoie sur le radeau")) World.TeleportToRaft();
 
-            Section("Engine");
-            Raft.InfiniteFuel = Toggle(new GUIContent("Infinite Fuel", "Engines never run out of fuel"), Raft.InfiniteFuel);
-            Raft.AnchorAll = Toggle(new GUIContent("Auto Anchor", "Keeps all anchors deployed"), Raft.AnchorAll);
+            Section("Moteur");
+            Raft.InfiniteFuel = Toggle(new GUIContent("Carburant Infini", "Les moteurs ne manquent jamais de carburant"), Raft.InfiniteFuel);
+            Raft.AnchorAll = Toggle(new GUIContent("Ancre Auto", "Maintient toutes les ancres d\u00e9ploy\u00e9es"), Raft.AnchorAll);
 
             Section("Protection");
-            Raft.AutoRepair = Toggle(new GUIContent("Auto Repair", "Automatically repair raft blocks when damaged"), Raft.AutoRepair);
+            Raft.AutoRepair = Toggle(new GUIContent("R\u00e9paration Auto", "R\u00e9pare automatiquement les blocs du radeau"), Raft.AutoRepair);
 
             GUILayout.EndScrollView();
         }
@@ -640,30 +662,29 @@ namespace RaftMod
         {
             _escroll = GUILayout.BeginScrollView(_escroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
-            Section("Game Mode");
+            Section("Mode de Jeu");
             var wasCreative = Extra.IsCreativeMode();
-            var nowCreative = Toggle(new GUIContent("Creative Mode", "Disable hunger, instant build, no costs"), wasCreative);
+            var nowCreative = Toggle(new GUIContent("Mode Cr\u00e9atif", "D\u00e9sactive la faim, construction instantan\u00e9e, pas de co\u00fbt"), wasCreative);
             if (nowCreative != wasCreative) Extra.SetCreativeMode(nowCreative);
-            InlineSlider("Game Speed", ref Extra.GameSpeed, 0.1f, 10f, "x");
+            InlineSlider("Vitesse du Jeu", ref Extra.GameSpeed, 0.1f, 10f, "x");
 
             Section("Progression");
-            if (Button("Unlock All Achievements", "Unlock every Steam achievement")) Extra.UnlockAllAchievements();
-            if (Button("Unlock All Notes", "Discover all story notes")) Extra.UnlockAllNotes();
-            if (Button("Unlock All Frequencies", "Activate all radio frequencies")) Extra.UnlockAllFrequencies();
-            if (Button("Finish All Quests", "Complete all story quests instantly")) Extra.FinishAllQuests();
+            if (Button("D\u00e9verrouiller tous les Succ\u00e8s", "D\u00e9bloquer chaque succ\u00e8s Steam")) Extra.UnlockAllAchievements();
+            if (Button("D\u00e9verrouiller toutes les Notes", "D\u00e9couvrir toutes les notes d'histoire")) Extra.UnlockAllNotes();
+            if (Button("D\u00e9verrouiller toutes les Fr\u00e9quences", "Activer toutes les fr\u00e9quences radio")) Extra.UnlockAllFrequencies();
+            if (Button("Terminer toutes les Qu\u00eates", "Terminer toutes les qu\u00eates d'histoire instantan\u00e9ment")) Extra.FinishAllQuests();
 
-            if (Button("Unlock All Characters", "Unlock every playable character")) Extra.UnlockAllCharacters();
+            if (Button("D\u00e9verrouiller tous les Personnages", "D\u00e9bloquer tous les personnages jouables")) Extra.UnlockAllCharacters();
 
-            Section("Plants");
-            if (Button("Instant Grow All Plants", "Skip growth time for all planted crops")) Extra.InstantGrowPlants();
-            if (Button("Harvest All Plants", "Collect all fully-grown crops")) Extra.HarvestAllPlants();
+            Section("Plantes");
+            if (Button("Pousses Instantan\u00e9es", "Ignorer le temps de croissance des cultures")) Extra.InstantGrowPlants();
+            if (Button("R\u00e9colter toutes les Plantes", "R\u00e9colter toutes les cultures matures")) Extra.HarvestAllPlants();
 
-            Section("Utilities");
-            Extra.ShowCoordinates = Toggle(new GUIContent("Show Coordinates", "Display position HUD on screen"), Extra.ShowCoordinates);
-            Extra.ThirdPerson = Toggle(new GUIContent("Third Person", "Move camera behind the player"), Extra.ThirdPerson);
-            Extra.InfiniteBattery = Toggle(new GUIContent("Infinite Battery", "All batteries stay charged"), Extra.InfiniteBattery);
+            Section("Utilitaires");
+            Extra.ShowCoordinates = Toggle(new GUIContent("Afficher Coordonn\u00e9es", "Afficher les coordonn\u00e9es \u00e0 l'\u00e9cran"), Extra.ShowCoordinates);
+            Extra.InfiniteBattery = Toggle(new GUIContent("Batterie Infinie", "Toutes les batteries restent charg\u00e9es"), Extra.InfiniteBattery);
 
-            Section("Teleport to Landmark");
+            Section("T\u00e9l\u00e9porter au Point d'Int\u00e9r\u00eat");
             var lmCount = Extra.GetLandmarkCount();
             if (lmCount > 0)
             {
@@ -678,11 +699,11 @@ namespace RaftMod
                     sel = (sel + 1) % lmCount;
                 GUILayout.EndHorizontal();
                 _selectedLandmark = sel;
-                if (Button("Teleport", $"Teleport to {lmName}")) Extra.TeleportToLandmark(sel);
+                if (Button("T\u00e9l\u00e9porter", $"T\u00e9l\u00e9porter vers {lmName}")) Extra.TeleportToLandmark(sel);
             }
             else
             {
-                GUILayout.Label("No landmarks found nearby");
+                GUILayout.Label("Aucun point d'int\u00e9r\u00eat trouv\u00e9 \u00e0 proximit\u00e9");
             }
 
             GUILayout.EndScrollView();
@@ -693,11 +714,11 @@ namespace RaftMod
         {
             _cscroll = GUILayout.BeginScrollView(_cscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
-            Section("Key Bindings");
+            Section("Raccourcis Clavier");
             GUILayout.Space(2);
             var origC = GUI.contentColor;
             GUI.contentColor = TextDim;
-            GUILayout.Label("Click a key to rebind. ESC=cancel, DEL=clear.");
+            GUILayout.Label("Cliquez sur une touche pour la modifier. ESC=annuler, SUPPR=effacer.");
             GUI.contentColor = origC;
             GUILayout.Space(4);
 
@@ -828,8 +849,9 @@ namespace RaftMod
         {
             GUILayout.BeginHorizontal();
             GUILayout.Space(8);
-            GUILayout.Label(label, GUILayout.Width(70));
-            value = GUILayout.HorizontalSlider(value, min, max, _skin.horizontalSlider, _skin.horizontalSliderThumb, GUILayout.Height(16));
+            GUILayout.Label(label, GUILayout.ExpandWidth(false));
+            GUILayout.Space(4);
+            value = GUILayout.HorizontalSlider(value, min, max, _skin.horizontalSlider, _skin.horizontalSliderThumb, GUILayout.ExpandWidth(true), GUILayout.Height(16));
             var origC = GUI.contentColor;
             GUI.contentColor = Accent;
             GUILayout.Label(value.ToString(suffix == "x" ? "F1" : "F0") + suffix, GUILayout.Width(40));
@@ -842,11 +864,12 @@ namespace RaftMod
         {
             GUILayout.BeginHorizontal();
             GUILayout.Space(8);
-            GUILayout.Label(label + ": ", GUILayout.Width(70));
+            GUILayout.Label(label + ": ", GUILayout.ExpandWidth(false));
             var orig = GUI.contentColor;
             GUI.contentColor = Accent;
-            GUILayout.Label(value);
+            GUILayout.Label(value, GUILayout.ExpandWidth(false));
             GUI.contentColor = orig;
+            GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
         }
 

@@ -58,6 +58,9 @@
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>D:\Games\Raft\Raft_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>D:\Games\Raft\Raft_Data\Managed\UnityEngine.UnityWebRequestModule.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
   </ItemGroup>
@@ -69,6 +72,7 @@
     <Compile Include="Features\WorldFeatures.cs" />
     <Compile Include="Features\RaftFeatures.cs" />
     <Compile Include="Features\ExtraFeatures.cs" />
+    <Compile Include="Features\Updater.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

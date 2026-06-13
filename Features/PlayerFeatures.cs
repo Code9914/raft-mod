@@ -22,6 +22,9 @@ namespace RaftMod
 
         private Network_Player _localPlayer;
         private float _autoPickupTimer;
+        private bool _fovLoaded;
+        private float _lastSavedFov;
+        private const string FOV_KEY = "RaftMod_FOV";
 
         private Network_Player LocalPlayer
         {
@@ -74,6 +77,13 @@ namespace RaftMod
         {
             try
             {
+                if (!_fovLoaded)
+                {
+                    _fovLoaded = true;
+                    FOV = PlayerPrefs.GetFloat(FOV_KEY, 60f);
+                    _lastSavedFov = FOV;
+                }
+
                 var net = LocalPlayer;
                 if (net?.Stats == null) return;
                 var pc = net.PersonController;
@@ -117,6 +127,13 @@ namespace RaftMod
                 var settings = ComponentManager<Settings>.Value;
                 if (settings?.graphicsBox?.FOVSlider != null)
                     settings.graphicsBox.FOVSlider.value = FOV;
+
+                if (Math.Abs(FOV - _lastSavedFov) > 0.01f)
+                {
+                    _lastSavedFov = FOV;
+                    PlayerPrefs.SetFloat(FOV_KEY, FOV);
+                    PlayerPrefs.Save();
+                }
 
                 if (AutoPickup)
                     DoAutoPickup(net);
