@@ -423,13 +423,6 @@ namespace RaftMod
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
 
-            var btnRect = new Rect(_windowRect.width - 80, 7, 72, 22);
-            if (GUI.Button(btnRect, "Fermer", _skin.button))
-            {
-                _showMenu = false;
-                Extra.MenuOpen = false;
-            }
-
             GUI.DragWindow(headerRect);
         }
 
