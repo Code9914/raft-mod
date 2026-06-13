@@ -20,6 +20,10 @@ namespace RaftMod
         private GUISkin _skin;
         private bool _skinInit;
         private Texture2D _texAccent;
+        private Texture2D _texToggleTrackOn;
+        private Texture2D _texToggleTrackOff;
+        private Texture2D _texThumb;
+        private Texture2D _texSectionLine;
         private List<Item_Base> _itemCache;
         private float _itemCacheTimer;
         private GUIStyle _rowEven;
@@ -44,16 +48,19 @@ namespace RaftMod
         public RaftFeatures Raft { get; } = new RaftFeatures();
         public ExtraFeatures Extra { get; } = new ExtraFeatures();
 
-        private static readonly Color Purple = new Color(0.6f, 0.35f, 1f);
-        private static readonly Color PurpleDark = new Color(0.4f, 0.15f, 0.8f);
-        private static readonly Color PurpleGlow = new Color(0.7f, 0.5f, 1f);
-        private static readonly Color PurpleMuted = new Color(0.45f, 0.3f, 0.65f);
-        private static readonly Color BlackBg = Color.black;
-        private static readonly Color PanelBg = new Color(0.03f, 0.0f, 0.05f);
-        private static readonly Color ElementBg = new Color(0.06f, 0.0f, 0.10f);
-        private static readonly Color HoverBg = new Color(0.12f, 0.04f, 0.18f);
-        private static readonly Color ToggleOn = new Color(0.5f, 0.25f, 0.9f);
-        private static readonly Color ToggleOnHover = new Color(0.6f, 0.35f, 1f);
+        private static readonly Color Accent = new Color(0.55f, 0.30f, 0.95f);
+        private static readonly Color AccentHover = new Color(0.65f, 0.42f, 1.0f);
+        private static readonly Color AccentDim = new Color(0.40f, 0.20f, 0.75f);
+        private static readonly Color BgMain = new Color(0.05f, 0.02f, 0.08f);
+        private static readonly Color BgTab = new Color(0.09f, 0.04f, 0.13f);
+        private static readonly Color BgPanel = new Color(0.11f, 0.05f, 0.16f);
+        private static readonly Color BgHover = new Color(0.18f, 0.08f, 0.26f);
+        private static readonly Color BgElement = new Color(0.14f, 0.06f, 0.20f);
+        private static readonly Color TextMain = new Color(0.92f, 0.88f, 0.96f);
+        private static readonly Color TextDim = new Color(0.55f, 0.45f, 0.70f);
+        private static readonly Color ToggleOff = new Color(0.20f, 0.10f, 0.32f);
+        private static readonly Color ToggleOnColor = new Color(0.50f, 0.25f, 0.90f);
+        private static readonly Color ThumbColor = new Color(0.95f, 0.92f, 1.0f);
 
         private void InitSkin()
         {
@@ -66,31 +73,31 @@ namespace RaftMod
             _skin.window = new GUIStyle(GUI.skin.window)
             {
                 normal = {
-                    background = MakeTexture(32, 32, Color.black),
-                    textColor = new Color(0.9f, 0.8f, 1f)
+                    background = MakeTexture(32, 32, BgMain),
+                    textColor = TextMain
                 },
                 border = new RectOffset(8, 8, 28, 8),
-                padding = new RectOffset(12, 12, 32, 12),
-                fontSize = 15,
+                padding = new RectOffset(14, 14, 34, 14),
+                fontSize = 14,
                 fontStyle = FontStyle.Bold
             };
 
             _skin.box = new GUIStyle(GUI.skin.box)
             {
                 normal = {
-                    background = MakeBorderedTexture(16, 24, new Color(0.04f, 0.0f, 0.07f), Purple),
-                    textColor = new Color(0.9f, 0.85f, 1f)
+                    background = MakeTexture(1, 1, BgPanel),
+                    textColor = TextDim
                 },
-                border = new RectOffset(4, 4, 4, 4),
-                padding = new RectOffset(10, 6, 5, 5),
-                fontSize = 12,
+                border = new RectOffset(6, 6, 6, 6),
+                padding = new RectOffset(10, 8, 7, 7),
+                fontSize = 11,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft
             };
 
             _skin.label = new GUIStyle(GUI.skin.label)
             {
-                normal = { textColor = new Color(0.85f, 0.82f, 0.9f) },
+                normal = { textColor = TextMain },
                 fontSize = 12,
                 padding = new RectOffset(4, 2, 3, 3),
                 wordWrap = false
@@ -98,72 +105,79 @@ namespace RaftMod
 
             _skin.toggle = new GUIStyle(GUI.skin.toggle)
             {
-                normal = { textColor = new Color(0.9f, 0.85f, 0.95f), background = MakeTexture(1, 1, ElementBg) },
-                onNormal = { textColor = Color.white, background = MakeTexture(1, 1, ToggleOn) },
-                hover = { textColor = Color.white, background = MakeTexture(1, 1, HoverBg) },
-                onHover = { textColor = Color.white, background = MakeTexture(1, 1, ToggleOnHover) },
-                padding = new RectOffset(24, 6, 5, 5),
+                normal = { textColor = TextMain, background = MakeTexture(1, 1, Color.clear) },
+                onNormal = { textColor = TextMain, background = MakeTexture(1, 1, Color.clear) },
+                hover = { textColor = Color.white, background = MakeTexture(1, 1, Color.clear) },
+                onHover = { textColor = Color.white, background = MakeTexture(1, 1, Color.clear) },
+                padding = new RectOffset(4, 4, 3, 3),
                 fontSize = 12,
-                border = new RectOffset(4, 4, 5, 5),
+                border = new RectOffset(0, 0, 0, 0),
                 overflow = new RectOffset(0, 0, 0, 0),
                 fontStyle = FontStyle.Normal
             };
 
             _skin.button = new GUIStyle(GUI.skin.button)
             {
-                normal = { textColor = Color.white, background = MakeTexture(1, 1, new Color(0.35f, 0.15f, 0.6f)) },
-                hover = { textColor = Color.white, background = MakeTexture(1, 1, new Color(0.5f, 0.25f, 0.85f)) },
-                active = { textColor = new Color(0.8f, 0.7f, 1f), background = MakeTexture(1, 1, new Color(0.25f, 0.1f, 0.4f)) },
+                normal = { textColor = TextMain, background = MakeRoundedRect(32, 32, AccentDim, 4) },
+                hover = { textColor = Color.white, background = MakeRoundedRect(32, 32, Accent, 4) },
+                active = { textColor = TextDim, background = MakeRoundedRect(32, 32, AccentDim * 0.6f, 4) },
                 fontSize = 12,
                 fontStyle = FontStyle.Bold,
-                padding = new RectOffset(8, 8, 6, 6),
+                padding = new RectOffset(10, 10, 5, 5),
                 border = new RectOffset(4, 4, 4, 4),
-                margin = new RectOffset(0, 0, 2, 2),
+                margin = new RectOffset(4, 4, 2, 2),
                 alignment = TextAnchor.MiddleCenter
             };
 
             _skin.horizontalSlider = new GUIStyle(GUI.skin.horizontalSlider)
             {
-                normal = { background = MakeTexture(1, 1, new Color(0.02f, 0.0f, 0.04f)) },
-                border = new RectOffset(4, 4, 4, 4),
-                margin = new RectOffset(0, 0, 4, 4)
+                normal = { background = MakeRoundedRect(16, 6, ToggleOff, 3) },
+                border = new RectOffset(3, 3, 3, 3),
+                margin = new RectOffset(0, 0, 6, 6),
+                fixedHeight = 6
             };
             _skin.horizontalSliderThumb = new GUIStyle(GUI.skin.horizontalSliderThumb)
             {
-                normal = { background = MakeTexture(8, 16, Purple) },
-                hover = { background = MakeTexture(8, 16, PurpleGlow) },
-                border = new RectOffset(4, 4, 6, 6)
+                normal = { background = MakeCircle(8, Accent) },
+                hover = { background = MakeCircle(8, AccentHover) },
+                border = new RectOffset(4, 4, 4, 4),
+                fixedWidth = 14,
+                fixedHeight = 14
             };
 
             _skin.verticalScrollbar = new GUIStyle(GUI.skin.verticalScrollbar)
             {
-                normal = { background = MakeTexture(2, 1, Color.black) },
+                normal = { background = MakeTexture(2, 1, Color.clear) },
                 border = new RectOffset(1, 1, 1, 1),
-                fixedWidth = 10
+                fixedWidth = 8
             };
             _skin.verticalScrollbarThumb = new GUIStyle(GUI.skin.verticalScrollbarThumb)
             {
-                normal = { background = MakeTexture(8, 8, new Color(0.25f, 0.12f, 0.4f)) },
-                hover = { background = MakeTexture(8, 8, new Color(0.4f, 0.2f, 0.6f)) },
+                normal = { background = MakeRoundedRect(6, 16, new Color(0.35f, 0.20f, 0.50f), 3) },
+                hover = { background = MakeRoundedRect(6, 16, AccentDim, 3) },
                 border = new RectOffset(3, 3, 3, 3),
-                fixedWidth = 8
+                fixedWidth = 6
             };
 
             GUI.skin = _skin;
-            _texAccent = MakeTexture(1, 1, Purple);
+            _texAccent = MakeTexture(1, 1, Accent);
+            _texToggleTrackOn = MakeRoundedRect(36, 18, ToggleOnColor, 9);
+            _texToggleTrackOff = MakeRoundedRect(36, 18, ToggleOff, 9);
+            _texThumb = MakeCircle(7, ThumbColor);
+            _texSectionLine = MakeTexture(2, 1, Accent);
 
             _rowEven = new GUIStyle
             {
-                normal = { background = MakeTexture(1, 1, new Color(0.06f, 0.0f, 0.10f)) },
+                normal = { background = MakeTexture(1, 1, new Color(0.08f, 0.03f, 0.12f)) },
                 margin = new RectOffset(0, 0, 0, 0),
-                padding = new RectOffset(6, 2, 3, 3),
+                padding = new RectOffset(8, 4, 4, 4),
                 border = new RectOffset(1, 1, 1, 1)
             };
             _rowOdd = new GUIStyle
             {
-                normal = { background = MakeTexture(1, 1, new Color(0.03f, 0.0f, 0.05f)) },
+                normal = { background = MakeTexture(1, 1, new Color(0.05f, 0.02f, 0.08f)) },
                 margin = new RectOffset(0, 0, 0, 0),
-                padding = new RectOffset(6, 2, 3, 3),
+                padding = new RectOffset(8, 4, 4, 4),
                 border = new RectOffset(1, 1, 1, 1)
             };
         }
@@ -197,6 +211,48 @@ namespace RaftMod
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                     t.SetPixel(x, y, x < 3 ? borderColor : bg);
+            t.Apply();
+            return t;
+        }
+
+        private static Texture2D MakeRoundedRect(int w, int h, Color color, float radius)
+        {
+            var t = new Texture2D(w, h, TextureFormat.ARGB32, false);
+            float r2 = radius * radius;
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    bool topLeft = x < radius && y < radius && (x - radius) * (x - radius) + (y - radius) * (y - radius) > r2;
+                    bool topRight = x > w - 1 - radius && y < radius && (x - (w - 1 - radius)) * (x - (w - 1 - radius)) + (y - radius) * (y - radius) > r2;
+                    bool bottomLeft = x < radius && y > h - 1 - radius && (x - radius) * (x - radius) + (y - (h - 1 - radius)) * (y - (h - 1 - radius)) > r2;
+                    bool bottomRight = x > w - 1 - radius && y > h - 1 - radius && (x - (w - 1 - radius)) * (x - (w - 1 - radius)) + (y - (h - 1 - radius)) * (y - (h - 1 - radius)) > r2;
+                    if (topLeft || topRight || bottomLeft || bottomRight)
+                        t.SetPixel(x, y, Color.clear);
+                    else
+                        t.SetPixel(x, y, color);
+                }
+            }
+            t.Apply();
+            return t;
+        }
+
+        private static Texture2D MakeCircle(int r, Color color)
+        {
+            int d = r * 2;
+            var t = new Texture2D(d, d, TextureFormat.ARGB32, false);
+            float r2 = r * r;
+            float cx = r - 0.5f;
+            float cy = r - 0.5f;
+            for (int y = 0; y < d; y++)
+            {
+                for (int x = 0; x < d; x++)
+                {
+                    float dx = x - cx;
+                    float dy = y - cy;
+                    t.SetPixel(x, y, dx * dx + dy * dy <= r2 ? color : Color.clear);
+                }
+            }
             t.Apply();
             return t;
         }
@@ -321,62 +377,56 @@ namespace RaftMod
             _windowRect = GUI.Window(0, _windowRect, DrawWindow, "Raft Mod Menu");
         }
 
-        private Texture2D _bgBlack;
-
         private void DrawWindow(int id)
         {
-            if (_bgBlack == null) _bgBlack = MakeTexture(2, 2, Color.black);
-            GUI.DrawTexture(new Rect(0, 0, _windowRect.width, _windowRect.height), _bgBlack);
+            GUI.DrawTexture(new Rect(0, 0, _windowRect.width, _windowRect.height), _skin.window.normal.background);
 
-            GUILayout.BeginVertical();
-
-            if (_texAccent != null)
-                GUI.DrawTexture(new Rect(12, 30, _windowRect.width - 24, 2), _texAccent);
-
-            if (_texAccent != null)
-            {
-                GUI.DrawTexture(new Rect(12, 30, _windowRect.width - 24, 1), _texAccent);
-                GUI.DrawTexture(new Rect(12, 33, (_windowRect.width - 24) * 0.3f, 1), _texAccent);
-            }
+            var headerRect = new Rect(0, 0, _windowRect.width, 30);
+            GUI.DrawTexture(new Rect(0, 28, _windowRect.width, 1), _texAccent);
+            GUI.DrawTexture(new Rect(14, 30, 40, 2), _texAccent);
 
             DrawTabBar();
             DrawCurrentTab();
 
-            GUILayout.EndVertical();
-
-            GUI.DragWindow(new Rect(0, 0, _windowRect.width, 24));
+            GUI.DragWindow(headerRect);
         }
 
         private void DrawTabBar()
         {
-            var origBg = GUI.backgroundColor;
-            var origContent = GUI.contentColor;
-
             GUILayout.BeginHorizontal();
             GUILayout.Space(4);
             for (int i = 0; i < _tabs.Length; i++)
             {
-                var wasSelected = _currentTab == i;
-                if (wasSelected)
+                var isActive = _currentTab == i;
+                var origBg = GUI.backgroundColor;
+                var origC = GUI.contentColor;
+
+                GUI.backgroundColor = isActive ? BgPanel : Color.clear;
+                GUI.contentColor = isActive ? TextMain : TextDim;
+
+                var r = GUILayoutUtility.GetRect(new GUIContent(_tabs[i]), _skin.button, GUILayout.ExpandWidth(true), GUILayout.Height(28));
+                if (isActive)
+                    GUI.DrawTexture(new Rect(r.x, r.y, r.width, 1), _texAccent);
+
+                GUI.Label(new Rect(r.x + 2, r.y + 2, r.width - 4, 24), _tabs[i], new GUIStyle(_skin.label)
                 {
-                    GUI.backgroundColor = Purple;
-                    GUI.contentColor = Color.white;
-                }
-                else
+                    alignment = TextAnchor.MiddleCenter,
+                    fontSize = 11,
+                    fontStyle = isActive ? FontStyle.Bold : FontStyle.Normal
+                });
+
+                if (Event.current.type == EventType.MouseDown && r.Contains(Event.current.mousePosition) && !isActive)
                 {
-                    GUI.backgroundColor = new Color(0.02f, 0.0f, 0.04f);
-                    GUI.contentColor = new Color(0.6f, 0.45f, 0.8f);
+                    _currentTab = i;
+                    Event.current.Use();
                 }
 
-                var isSelected = GUILayout.Toggle(wasSelected, _tabs[i], _skin.button, GUILayout.Height(26));
-                if (isSelected && !wasSelected) _currentTab = i;
+                GUI.backgroundColor = origBg;
+                GUI.contentColor = origC;
             }
-            GUILayout.Space(4);
+            GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-            GUILayout.Space(6);
-
-            GUI.backgroundColor = origBg;
-            GUI.contentColor = origContent;
+            GUILayout.Space(2);
         }
 
         private void DrawCurrentTab()
@@ -632,7 +682,7 @@ namespace RaftMod
             Section("Key Bindings");
             GUILayout.Space(2);
             var origC = GUI.contentColor;
-            GUI.contentColor = PurpleMuted;
+            GUI.contentColor = TextDim;
             GUILayout.Label("Click a key to rebind. ESC=cancel, DEL=clear.");
             GUI.contentColor = origC;
             GUILayout.Space(4);
@@ -671,30 +721,69 @@ namespace RaftMod
         private void DrawCoordinatesOverlay()
         {
             var orig = GUI.contentColor;
-            GUI.contentColor = Purple;
+            GUI.contentColor = Accent;
             GUI.Label(new Rect(Screen.width - 180, 10, 170, 20), Extra.GetCoordinates());
             GUI.contentColor = orig;
         }
 
         private void Section(string title)
         {
-            GUILayout.Space(4);
-            GUILayout.Box(title, GUILayout.ExpandWidth(true), GUILayout.Height(22));
+            GUILayout.Space(6);
+            var origC = GUI.contentColor;
+            GUI.contentColor = TextDim;
+            var style = new GUIStyle(_skin.label) { fontSize = 10, fontStyle = FontStyle.Bold };
+            var r = GUILayoutUtility.GetRect(new GUIContent(title), style, GUILayout.ExpandWidth(true));
+            GUI.DrawTexture(new Rect(r.x + 4, r.y + 2, 2, r.height - 4), _texAccent);
+            GUI.Label(new Rect(r.x + 10, r.y, r.width - 10, r.height), title, style);
+            GUI.contentColor = origC;
             GUILayout.Space(2);
+        }
+
+        private bool Switch(GUIContent content, bool value)
+        {
+            var rect = GUILayoutUtility.GetRect(220, 24);
+
+            float trackX = rect.x + 6;
+            float trackY = rect.y + (rect.height - 18) * 0.5f;
+
+            var trackRect = new Rect(trackX, trackY, 36, 18);
+            var thumbRect = new Rect(value ? trackX + 20 : trackX + 2, trackY + 2, 14, 14);
+
+            GUI.DrawTexture(trackRect, value ? _texToggleTrackOn : _texToggleTrackOff);
+            GUI.DrawTexture(thumbRect, _texThumb);
+
+            var origC = GUI.contentColor;
+            GUI.contentColor = value ? TextMain : TextDim;
+            var labelRect = new Rect(trackRect.xMax + 8, rect.y, rect.width - trackRect.width - 16, rect.height);
+            GUI.Label(labelRect, content.text, _skin.toggle);
+            GUI.contentColor = origC;
+
+            if (!string.IsNullOrEmpty(content.tooltip))
+                GUI.Label(rect, new GUIContent("", content.tooltip));
+
+            var ev = Event.current;
+            if (ev.type == EventType.MouseDown && rect.Contains(ev.mousePosition))
+            {
+                value = !value;
+                ev.Use();
+            }
+
+            return value;
+        }
+
+        private bool Switch(string label, bool value, string tooltip = "")
+        {
+            return Switch(new GUIContent(label, tooltip), value);
         }
 
         private bool Toggle(GUIContent content, bool value)
         {
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(4);
-            var result = GUILayout.Toggle(value, content, _skin.toggle, GUILayout.Height(22));
-            GUILayout.EndHorizontal();
-            return result;
+            return Switch(content, value);
         }
 
         private bool Toggle(string label, bool value)
         {
-            return Toggle(new GUIContent(label, ""), value);
+            return Switch(new GUIContent(label, ""), value);
         }
 
         private bool Button(string label, string tooltip = "")
@@ -702,7 +791,7 @@ namespace RaftMod
             bool clicked = false;
             GUILayout.BeginHorizontal();
             GUILayout.Space(8);
-            if (GUILayout.Button(new GUIContent(label, tooltip), _skin.button, GUILayout.Height(26)))
+            if (GUILayout.Button(new GUIContent(label, tooltip), _skin.button, GUILayout.Height(26), GUILayout.ExpandWidth(true)))
                 clicked = true;
             GUILayout.EndHorizontal();
             return clicked;
@@ -711,11 +800,11 @@ namespace RaftMod
         private bool DangerButton(string label, string tooltip = "")
         {
             var orig = GUI.backgroundColor;
-            GUI.backgroundColor = new Color(0.4f, 0.08f, 0.12f);
+            GUI.backgroundColor = new Color(0.45f, 0.08f, 0.12f);
             bool clicked = false;
             GUILayout.BeginHorizontal();
             GUILayout.Space(8);
-            if (GUILayout.Button(new GUIContent(label, tooltip), _skin.button, GUILayout.Height(26)))
+            if (GUILayout.Button(new GUIContent(label, tooltip), _skin.button, GUILayout.Height(26), GUILayout.ExpandWidth(true)))
                 clicked = true;
             GUILayout.EndHorizontal();
             GUI.backgroundColor = orig;
@@ -726,9 +815,12 @@ namespace RaftMod
         {
             GUILayout.BeginHorizontal();
             GUILayout.Space(8);
-            GUILayout.Label(label, GUILayout.Width(60));
+            GUILayout.Label(label, GUILayout.Width(70));
             value = GUILayout.HorizontalSlider(value, min, max, _skin.horizontalSlider, _skin.horizontalSliderThumb, GUILayout.Height(16));
-            GUILayout.Label(value.ToString(suffix == "x" ? "F1" : "F0") + suffix, GUILayout.Width(45));
+            var origC = GUI.contentColor;
+            GUI.contentColor = Accent;
+            GUILayout.Label(value.ToString(suffix == "x" ? "F1" : "F0") + suffix, GUILayout.Width(40));
+            GUI.contentColor = origC;
             GUILayout.Space(8);
             GUILayout.EndHorizontal();
         }
@@ -739,7 +831,7 @@ namespace RaftMod
             GUILayout.Space(8);
             GUILayout.Label(label + ": ", GUILayout.Width(70));
             var orig = GUI.contentColor;
-            GUI.contentColor = Purple;
+            GUI.contentColor = Accent;
             GUILayout.Label(value);
             GUI.contentColor = orig;
             GUILayout.EndHorizontal();

@@ -114,8 +114,9 @@ namespace RaftMod
                     gm.playerSpecificVariables.outgoingDamageMultiplierPVE = DamageMultiplier;
                 }
 
-                if (net.Camera != null)
-                    net.Camera.fieldOfView = FOV;
+                var settings = ComponentManager<Settings>.Value;
+                if (settings?.graphicsBox?.FOVSlider != null)
+                    settings.graphicsBox.FOVSlider.value = FOV;
 
                 if (AutoPickup)
                     DoAutoPickup(net);
