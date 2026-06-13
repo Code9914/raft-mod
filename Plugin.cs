@@ -8,11 +8,11 @@ using UnityEngine;
 
 namespace RaftMod
 {
-    [BepInPlugin("raft.mod", "Raft Mod UI", "1.7.2")]
+    [BepInPlugin("raft.mod", "Raft Mod UI", "1.8.0")]
     public class Plugin : BaseUnityPlugin
-    {
-        internal static ManualLogSource Log;
-        internal static string Version => "1.7.2";
+:		{
+		internal static ManualLogSource Log;
+		internal static string Version => "1.8.0";
         internal static Updater ModUpdater;
         internal static Plugin Instance;
 
