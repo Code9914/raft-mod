@@ -416,6 +416,15 @@ namespace RaftMod
             InlineSlider("Swim", ref Player.SwimMultiplier, 0.5f, 10f, "x");
             InlineSlider("Gravity", ref Player.Gravity, 5f, 50f, "");
 
+            Section("Combat");
+            Player.InfDurability = Toggle(new GUIContent("Infinite Durability", "Tools and weapons never lose durability"), Player.InfDurability);
+            Player.NoFallDamage = Toggle(new GUIContent("No Fall Damage", "Disable all fall damage"), Player.NoFallDamage);
+            InlineSlider("Damage Multiplier", ref Player.DamageMultiplier, 0f, 20f, "x");
+
+            Section("Convenience");
+            Player.AutoPickup = Toggle(new GUIContent("Auto Pickup Items", "Automatically pick up nearby items"), Player.AutoPickup);
+            InlineSlider("Field of View", ref Player.FOV, 40f, 120f, "");
+
             GUILayout.EndScrollView();
         }
 
@@ -529,6 +538,10 @@ namespace RaftMod
             if (Button("Teleport to Raft", "Teleport yourself to the raft")) World.TeleportToRaft();
             if (Button("Teleport to Crosshair", "Teleport to where you are looking")) World.TeleportToCamera();
 
+            Section("Fishing");
+            World.InstantFish = Toggle(new GUIContent("Instant Fish", "Fish bites immediately when you cast"), World.InstantFish);
+            World.AutoCatch = Toggle(new GUIContent("Auto Catch", "Automatically reel in fish when hooked"), World.AutoCatch);
+
             GUILayout.EndScrollView();
         }
 
@@ -549,6 +562,9 @@ namespace RaftMod
             Section("Engine");
             Raft.InfiniteFuel = Toggle(new GUIContent("Infinite Fuel", "Engines never run out of fuel"), Raft.InfiniteFuel);
             Raft.AnchorAll = Toggle(new GUIContent("Auto Anchor", "Keeps all anchors deployed"), Raft.AnchorAll);
+
+            Section("Protection");
+            Raft.AutoRepair = Toggle(new GUIContent("Auto Repair", "Automatically repair raft blocks when damaged"), Raft.AutoRepair);
 
             GUILayout.EndScrollView();
         }

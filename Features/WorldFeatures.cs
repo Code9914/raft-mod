@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using UnityEngine;
 
 namespace RaftMod
@@ -11,10 +12,14 @@ namespace RaftMod
         public float TargetHour = 8f;
         public float TimeSpeed = 1f;
 
+        public bool InstantFish;
+        public bool AutoCatch;
+
         private AI_NetworkBehaviour[] _cachedEnemies = new AI_NetworkBehaviour[0];
         private AI_NetworkBehavior_Shark _cachedShark;
         private SkyManager _cachedSky;
         private float _cacheTimer;
+        private Bobber _lastAutoCatchBobber;
 
         public float GetCurrentHour()
         {
@@ -122,6 +127,7 @@ namespace RaftMod
                 if (NoEnemies) DisableEnemies();
                 if (NoShark) DisableShark();
                 if (AlwaysDay) ForceDay();
+                if (InstantFish || AutoCatch) ProcessFishing();
 
                 if (Math.Abs(TimeSpeed - 1f) > 0.01f)
                     ApplyTimeSpeed();
@@ -165,6 +171,38 @@ namespace RaftMod
             {
                 var cur = _cachedSky.skyController.timeOfDay.hour;
                 _cachedSky.skyController.timeOfDay.GotoTime(cur + (TimeSpeed - 1f) * Time.deltaTime * 0.5f);
+            }
+        }
+
+        private void ProcessFishing()
+        {
+            var bobbers = UnityEngine.Object.FindObjectsOfType<Bobber>();
+            var wtField = typeof(Bobber).GetField("waitTime", BindingFlags.NonPublic | BindingFlags.Instance);
+            var piMethod = AutoCatch
+                ? typeof(FishingRod).GetMethod("PullItemsFromSea", BindingFlags.NonPublic | BindingFlags.Instance)
+                : null;
+
+            foreach (var b in bobbers)
+            {
+                if (!b.gameObject.activeInHierarchy) continue;
+
+                if (InstantFish && wtField != null)
+                {
+                    var wt = wtField.GetValue(b) as Interval_Float;
+                    if (wt != null)
+                    {
+                        wt.minValue = 0f;
+                        wt.maxValue = 0f;
+                    }
+                }
+
+                if (AutoCatch && b.FishIsOnHook && b != _lastAutoCatchBobber && piMethod != null)
+                {
+                    _lastAutoCatchBobber = b;
+                    var rod = UnityEngine.Object.FindObjectOfType<FishingRod>();
+                    if (rod != null)
+                        piMethod.Invoke(rod, null);
+                }
             }
         }
     }

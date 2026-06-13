@@ -8,12 +8,14 @@ namespace RaftMod
     {
         public bool InfiniteFuel;
         public bool AnchorAll;
+        public bool AutoRepair;
         public float MaxSpeed = 5f;
         public float Acceleration = 2f;
 
         private Raft _raft;
         private Fuel[] _cachedFuel = new Fuel[0];
         private float _fuelTimer;
+        private float _repairTimer;
 
         public void Update()
         {
@@ -41,6 +43,21 @@ namespace RaftMod
 
                 if (InfiniteFuel)
                     RefillAllFuel();
+
+                _repairTimer -= Time.deltaTime;
+                if (AutoRepair && _repairTimer <= 0f)
+                {
+                    _repairTimer = 0.5f;
+                    var blocks = BlockCreator.GetPlacedBlocks();
+                    if (blocks != null)
+                    {
+                        foreach (var block in blocks)
+                        {
+                            if (block != null && block.CanBeRepaired())
+                                block.Repair(99999);
+                        }
+                    }
+                }
             }
             catch (Exception ex) { Plugin.Log.LogError($"Raft.Update: {ex.Message}"); }
         }

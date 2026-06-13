@@ -14,8 +14,14 @@ namespace RaftMod
         public float JumpMultiplier = 1f;
         public float SwimMultiplier = 1f;
         public float Gravity = 20f;
+        public bool InfDurability;
+        public bool NoFallDamage;
+        public bool AutoPickup;
+        public float DamageMultiplier = 1f;
+        public float FOV = 60f;
 
         private Network_Player _localPlayer;
+        private float _autoPickupTimer;
 
         private Network_Player LocalPlayer
         {
@@ -100,6 +106,20 @@ namespace RaftMod
                         net.flightCamera.Disable(true);
                 }
 
+                var gm = GameModeValueManager.GetCurrentGameModeValue();
+                if (gm != null)
+                {
+                    gm.toolVariables.areToolsIndestructible = InfDurability;
+                    gm.playerSpecificVariables.recieveFallDamage = !NoFallDamage;
+                    gm.playerSpecificVariables.outgoingDamageMultiplierPVE = DamageMultiplier;
+                }
+
+                if (net.Camera != null)
+                    net.Camera.fieldOfView = FOV;
+
+                if (AutoPickup)
+                    DoAutoPickup(net);
+
                 if (pc != null)
                 {
                     pc.normalSpeed = 3f * MoveSpeed;
@@ -116,6 +136,28 @@ namespace RaftMod
                 }
             }
             catch (Exception ex) { Plugin.Log.LogError($"Player.Update: {ex.Message}"); }
+        }
+
+        private void DoAutoPickup(Network_Player net)
+        {
+            _autoPickupTimer -= Time.deltaTime;
+            if (_autoPickupTimer > 0f) return;
+            _autoPickupTimer = 0.5f;
+
+            var pickups = UnityEngine.Object.FindObjectsOfType<PickupItem>();
+            var pickupScript = net.PickupScript;
+            if (pickupScript == null) return;
+
+            Vector3 playerPos = net.transform.position;
+            float radius = 5f;
+
+            foreach (var pickup in pickups)
+            {
+                if (!pickup.gameObject.activeInHierarchy) continue;
+                if (!pickup.canBePickedUp) continue;
+                if (Vector3.Distance(playerPos, pickup.transform.position) > radius) continue;
+                pickupScript.PickupItem(pickup, true, false);
+            }
         }
     }
 }
