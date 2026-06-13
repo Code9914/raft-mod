@@ -55,14 +55,40 @@ namespace RaftMod
                 if (File.Exists(backupPath)) File.Delete(backupPath);
                 File.Move(currentPath, backupPath);
                 File.Move(downloadPath, currentPath);
-                PlayerPrefs.DeleteKey(PP_DOWNLOADED);
-                PlayerPrefs.SetString(PP_APPLIED, pendingVersion);
-                PlayerPrefs.Save();
-                Plugin.Log.LogInfo($"Update {pendingVersion} applied! Restart again to load.");
+                // Ne pas marquer la version comme "appliquée" ici : la DLL actuelle en mémoire
+                // est toujours l'ancienne. On laisse la clé PP_DOWNLOADED afin que la
+                // nouvelle instance du plugin (après redémarrage) puisse confirmer
+                // l'application et enregistrer PP_APPLIED.
+                Plugin.Log.LogInfo($"Update {pendingVersion} deployed on disk. Restart to load the new version.");
             }
             catch (Exception ex)
             {
                 Plugin.Log.LogError($"ApplyUpdate: {ex.Message}");
+            }
+        }
+
+        // Appelée par la nouvelle instance du plugin au démarrage pour confirmer
+        // que la mise à jour précédemment déployée a bien été chargée en mémoire.
+        public static void ConfirmApplied(string currentVersion)
+        {
+            try
+            {
+                var pending = PlayerPrefs.GetString(PP_DOWNLOADED, "");
+                if (string.IsNullOrEmpty(pending)) return;
+
+                // Si la version en attente correspond à la version courante chargée,
+                // alors on considère la mise à jour comme appliquée.
+                if (CompareVersions(pending, currentVersion) == 0)
+                {
+                    PlayerPrefs.DeleteKey(PP_DOWNLOADED);
+                    PlayerPrefs.SetString(PP_APPLIED, currentVersion);
+                    PlayerPrefs.Save();
+                    Plugin.Log.LogInfo($"Update {currentVersion} confirmed applied.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Log.LogError($"ConfirmApplied: {ex.Message}");
             }
         }
 

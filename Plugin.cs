@@ -8,11 +8,11 @@ using UnityEngine;
 
 namespace RaftMod
 {
-    [BepInPlugin("raft.mod", "Raft Mod UI", "1.8.3")]
+    [BepInPlugin("raft.mod", "Raft Mod UI", "1.8.4")]
     public class Plugin : BaseUnityPlugin
     {
         internal static ManualLogSource Log;
-        internal static string Version => "1.8.3";
+        internal static string Version => "1.8.4";
         internal static Updater ModUpdater;
         internal static Plugin Instance;
 
@@ -29,6 +29,9 @@ namespace RaftMod
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
             Updater.ApplyPendingUpdate();
+            // Après avoir tenté d'appliquer un update sur le disque, confirmer
+            // si la DLL actuellement chargée correspond à la version téléchargée.
+            Updater.ConfirmApplied(Version);
 
             ModUpdater = new Updater();
             ModUI.Instance = new ModUI();
