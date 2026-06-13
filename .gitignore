@@ -5,3 +5,4 @@ obj/
 *.sln.docstates
 .vs/
 *.csproj.user
+/RaftMod.dll
