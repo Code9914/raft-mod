@@ -18,8 +18,15 @@ namespace RaftMod
         private AI_NetworkBehaviour[] _cachedEnemies = new AI_NetworkBehaviour[0];
         private AI_NetworkBehavior_Shark _cachedShark;
         private SkyManager _cachedSky;
+        private Bobber[] _cachedBobbers = new Bobber[0];
+        private FishingRod _cachedFishingRod;
         private float _cacheTimer;
+        private float _fishingScanTimer;
         private Bobber _lastAutoCatchBobber;
+        private static readonly FieldInfo BobberWaitTimeField =
+            typeof(Bobber).GetField("waitTime", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo PullItemsFromSeaMethod =
+            typeof(FishingRod).GetMethod("PullItemsFromSea", BindingFlags.NonPublic | BindingFlags.Instance);
 
         public float GetCurrentHour()
         {
@@ -128,6 +135,12 @@ namespace RaftMod
                 if (NoShark) DisableShark();
                 if (AlwaysDay) ForceDay();
                 if (InstantFish || AutoCatch) ProcessFishing();
+                else if (_cachedBobbers.Length > 0)
+                {
+                    _cachedBobbers = new Bobber[0];
+                    _cachedFishingRod = null;
+                    _fishingScanTimer = 0f;
+                }
 
                 if (Math.Abs(TimeSpeed - 1f) > 0.01f)
                     ApplyTimeSpeed();
@@ -176,19 +189,23 @@ namespace RaftMod
 
         private void ProcessFishing()
         {
-            var bobbers = UnityEngine.Object.FindObjectsOfType<Bobber>();
-            var wtField = typeof(Bobber).GetField("waitTime", BindingFlags.NonPublic | BindingFlags.Instance);
-            var piMethod = AutoCatch
-                ? typeof(FishingRod).GetMethod("PullItemsFromSea", BindingFlags.NonPublic | BindingFlags.Instance)
-                : null;
-
-            foreach (var b in bobbers)
+            _fishingScanTimer -= Time.deltaTime;
+            if (_fishingScanTimer <= 0f)
             {
+                _cachedBobbers = UnityEngine.Object.FindObjectsOfType<Bobber>();
+                if (AutoCatch && _cachedFishingRod == null)
+                    _cachedFishingRod = UnityEngine.Object.FindObjectOfType<FishingRod>();
+                _fishingScanTimer = 0.5f;
+            }
+
+            foreach (var b in _cachedBobbers)
+            {
+                if (b == null) continue;
                 if (!b.gameObject.activeInHierarchy) continue;
 
-                if (InstantFish && wtField != null)
+                if (InstantFish && BobberWaitTimeField != null)
                 {
-                    var wt = wtField.GetValue(b) as Interval_Float;
+                    var wt = BobberWaitTimeField.GetValue(b) as Interval_Float;
                     if (wt != null)
                     {
                         wt.minValue = 0f;
@@ -196,12 +213,13 @@ namespace RaftMod
                     }
                 }
 
-                if (AutoCatch && b.FishIsOnHook && b != _lastAutoCatchBobber && piMethod != null)
+                if (AutoCatch && b.FishIsOnHook && b != _lastAutoCatchBobber && PullItemsFromSeaMethod != null)
                 {
                     _lastAutoCatchBobber = b;
-                    var rod = UnityEngine.Object.FindObjectOfType<FishingRod>();
-                    if (rod != null)
-                        piMethod.Invoke(rod, null);
+                    if (_cachedFishingRod == null)
+                        _cachedFishingRod = UnityEngine.Object.FindObjectOfType<FishingRod>();
+                    if (_cachedFishingRod != null)
+                        PullItemsFromSeaMethod.Invoke(_cachedFishingRod, null);
                 }
             }
         }

@@ -63,15 +63,22 @@ namespace RaftMod
                     _landmarkRefresh = 2f;
                 }
 
-                _batteryRefresh -= Time.deltaTime;
-                if (_batteryRefresh <= 0f)
-                {
-                    _cachedBatteries = UnityEngine.Object.FindObjectsOfType<Battery>();
-                    _batteryRefresh = 2f;
-                }
-
                 if (InfiniteBattery)
+                {
+                    _batteryRefresh -= Time.deltaTime;
+                    if (_batteryRefresh <= 0f)
+                    {
+                        _cachedBatteries = UnityEngine.Object.FindObjectsOfType<Battery>();
+                        _batteryRefresh = 2f;
+                    }
+
                     RefillAllBatteries();
+                }
+                else if (_cachedBatteries.Length > 0)
+                {
+                    _cachedBatteries = new Battery[0];
+                    _batteryRefresh = 0f;
+                }
             }
             catch (Exception ex) { Plugin.Log.LogError($"Extra.Update: {ex.Message}"); }
         }

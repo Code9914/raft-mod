@@ -14,6 +14,7 @@ namespace RaftMod
 
         private Raft _raft;
         private Fuel[] _cachedFuel = new Fuel[0];
+        private float _raftScanTimer;
         private float _fuelTimer;
         private float _repairTimer;
 
@@ -22,7 +23,14 @@ namespace RaftMod
             try
             {
                 if (_raft == null)
-                    _raft = UnityEngine.Object.FindObjectOfType<Raft>();
+                {
+                    _raftScanTimer -= Time.deltaTime;
+                    if (_raftScanTimer <= 0f)
+                    {
+                        _raft = UnityEngine.Object.FindObjectOfType<Raft>();
+                        _raftScanTimer = 1f;
+                    }
+                }
 
                 if (_raft != null)
                 {
@@ -67,6 +75,8 @@ namespace RaftMod
             try
             {
                 var net = ComponentManager<Network_Player>.Value;
+                if (_raft == null)
+                    _raft = UnityEngine.Object.FindObjectOfType<Raft>();
                 if (_raft != null && net != null)
                 {
                     var pos = net.transform.position;

@@ -22,6 +22,8 @@ namespace RaftMod
 
         private Network_Player _localPlayer;
         private float _autoPickupTimer;
+        private float _autoPickupScanTimer;
+        private PickupItem[] _cachedPickups = new PickupItem[0];
         private bool _fovLoaded;
         private float _lastSavedFov;
         private const string FOV_KEY = "RaftMod_FOV";
@@ -137,6 +139,11 @@ namespace RaftMod
 
                 if (AutoPickup)
                     DoAutoPickup(net);
+                else if (_cachedPickups.Length > 0)
+                {
+                    _cachedPickups = new PickupItem[0];
+                    _autoPickupScanTimer = 0f;
+                }
 
                 if (pc != null)
                 {
@@ -162,18 +169,25 @@ namespace RaftMod
             if (_autoPickupTimer > 0f) return;
             _autoPickupTimer = 0.5f;
 
-            var pickups = UnityEngine.Object.FindObjectsOfType<PickupItem>();
+            _autoPickupScanTimer -= 0.5f;
+            if (_autoPickupScanTimer <= 0f)
+            {
+                _cachedPickups = UnityEngine.Object.FindObjectsOfType<PickupItem>();
+                _autoPickupScanTimer = 2f;
+            }
+
             var pickupScript = net.PickupScript;
             if (pickupScript == null) return;
 
             Vector3 playerPos = net.transform.position;
-            float radius = 5f;
+            const float radiusSqr = 5f * 5f;
 
-            foreach (var pickup in pickups)
+            foreach (var pickup in _cachedPickups)
             {
+                if (pickup == null) continue;
                 if (!pickup.gameObject.activeInHierarchy) continue;
                 if (!pickup.canBePickedUp) continue;
-                if (Vector3.Distance(playerPos, pickup.transform.position) > radius) continue;
+                if ((playerPos - pickup.transform.position).sqrMagnitude > radiusSqr) continue;
                 pickupScript.PickupItem(pickup, true, false);
             }
         }
