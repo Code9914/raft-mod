@@ -123,8 +123,14 @@ namespace RaftMod
             Plugin.Log.LogInfo($"Given {count} {category} items!");
         }
 
+        private float _infItemTimer;
+
         private void HandleInfiniteItems()
         {
+            _infItemTimer -= Time.deltaTime;
+            if (_infItemTimer > 0f) return;
+            _infItemTimer = 0.5f;
+
             var inv = ComponentManager<PlayerInventory>.Value;
             if (inv == null) return;
 

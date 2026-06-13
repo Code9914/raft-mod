@@ -13,7 +13,7 @@ namespace RaftMod
         private int _currentTab;
         private bool _gameReady;
         private float _readyTimer;
-        private Rect _windowRect = new Rect(50, 50, 470, 700);
+        private Rect _windowRect = new Rect(50, 50, 540, 710);
 
         private readonly string[] _tabs = { "Player", "Items", "World", "Raft", "Extra", "Controls" };
 
@@ -24,10 +24,13 @@ namespace RaftMod
         private Texture2D _texToggleTrackOff;
         private Texture2D _texThumb;
         private Texture2D _texSectionLine;
+        private Texture2D _texHover;
         private List<Item_Base> _itemCache;
         private float _itemCacheTimer;
         private GUIStyle _rowEven;
         private GUIStyle _rowOdd;
+        private GUIStyle _sectionStyle;
+        private GUIStyle _tabLabelStyle;
 
         private class KeyBind
         {
@@ -159,12 +162,16 @@ namespace RaftMod
                 fixedWidth = 6
             };
 
+            _sectionStyle = new GUIStyle(_skin.label) { fontSize = 10, fontStyle = FontStyle.Bold };
+            _tabLabelStyle = new GUIStyle(_skin.label) { alignment = TextAnchor.MiddleLeft };
+
             GUI.skin = _skin;
             _texAccent = MakeTexture(1, 1, Accent);
             _texToggleTrackOn = MakeRoundedRect(36, 18, ToggleOnColor, 9);
             _texToggleTrackOff = MakeRoundedRect(36, 18, ToggleOff, 9);
             _texThumb = MakeCircle(7, ThumbColor);
             _texSectionLine = MakeTexture(2, 1, Accent);
+            _texHover = MakeTexture(1, 1, new Color(0.14f, 0.06f, 0.22f));
 
             _rowEven = new GUIStyle
             {
@@ -381,52 +388,59 @@ namespace RaftMod
         {
             GUI.DrawTexture(new Rect(0, 0, _windowRect.width, _windowRect.height), _skin.window.normal.background);
 
-            var headerRect = new Rect(0, 0, _windowRect.width, 30);
-            GUI.DrawTexture(new Rect(0, 28, _windowRect.width, 1), _texAccent);
-            GUI.DrawTexture(new Rect(14, 30, 40, 2), _texAccent);
+            var headerRect = new Rect(0, 0, _windowRect.width, 28);
+            GUI.DrawTexture(new Rect(14, 26, 40, 2), _texAccent);
 
-            DrawTabBar();
+            var origC = GUI.contentColor;
+            GUI.contentColor = TextDim;
+            GUI.Label(new Rect(14, 5, 200, 20), "Raft Mod Menu");
+            GUI.contentColor = Accent;
+            GUI.Label(new Rect(14, 17, 80, 12), "v1.6.0", new GUIStyle(_skin.label) { fontSize = 9 });
+            GUI.contentColor = origC;
+
+            GUILayout.BeginHorizontal();
+            GUILayout.BeginVertical(GUILayout.Width(85));
+            DrawSideTabs();
+            GUILayout.EndVertical();
+            GUI.DrawTexture(new Rect(85, 28, 1, _windowRect.height - 28), _texAccent);
+            GUILayout.BeginVertical(GUILayout.ExpandWidth(true));
             DrawCurrentTab();
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
 
             GUI.DragWindow(headerRect);
         }
 
-        private void DrawTabBar()
+        private void DrawSideTabs()
         {
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(4);
+            GUILayout.Space(8);
             for (int i = 0; i < _tabs.Length; i++)
             {
                 var isActive = _currentTab == i;
-                var origBg = GUI.backgroundColor;
-                var origC = GUI.contentColor;
+                var r = GUILayoutUtility.GetRect(new GUIContent(_tabs[i]), _skin.button, GUILayout.ExpandWidth(true), GUILayout.Height(30));
 
-                GUI.backgroundColor = isActive ? BgPanel : Color.clear;
-                GUI.contentColor = isActive ? TextMain : TextDim;
-
-                var r = GUILayoutUtility.GetRect(new GUIContent(_tabs[i]), _skin.button, GUILayout.ExpandWidth(true), GUILayout.Height(28));
+                var bgRect = new Rect(r.x, r.y, 85, 30);
                 if (isActive)
-                    GUI.DrawTexture(new Rect(r.x, r.y, r.width, 1), _texAccent);
-
-                GUI.Label(new Rect(r.x + 2, r.y + 2, r.width - 4, 24), _tabs[i], new GUIStyle(_skin.label)
                 {
-                    alignment = TextAnchor.MiddleCenter,
-                    fontSize = 11,
-                    fontStyle = isActive ? FontStyle.Bold : FontStyle.Normal
-                });
+                    GUI.DrawTexture(new Rect(0, r.y, 3, 30), _texAccent);
+                    GUI.DrawTexture(bgRect, MakeTexture(1, 1, BgPanel));
+                }
+                else if (bgRect.Contains(Event.current.mousePosition))
+                    GUI.DrawTexture(bgRect, _texHover);
 
-                if (Event.current.type == EventType.MouseDown && r.Contains(Event.current.mousePosition) && !isActive)
+                var origC = GUI.contentColor;
+                GUI.contentColor = isActive ? TextMain : TextDim;
+                _tabLabelStyle.fontStyle = isActive ? FontStyle.Bold : FontStyle.Normal;
+                GUI.Label(new Rect(r.x + 8, r.y, r.width - 8, 30), _tabs[i], _tabLabelStyle);
+                GUI.contentColor = origC;
+
+                if (Event.current.type == EventType.MouseDown && bgRect.Contains(Event.current.mousePosition) && !isActive)
                 {
                     _currentTab = i;
                     Event.current.Use();
                 }
-
-                GUI.backgroundColor = origBg;
-                GUI.contentColor = origC;
             }
             GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
-            GUILayout.Space(2);
         }
 
         private void DrawCurrentTab()
@@ -446,7 +460,7 @@ namespace RaftMod
         private Vector2 _pscroll;
         private void DrawPlayerTab()
         {
-            _pscroll = GUILayout.BeginScrollView(_pscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
+            _pscroll = GUILayout.BeginScrollView(_pscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
             Section("Health");
             Player.GodMode = Toggle(new GUIContent("God Mode", "Invincible, unlimited health and bonus HP"), Player.GodMode);
@@ -483,7 +497,7 @@ namespace RaftMod
         private string _itemSearch = "";
         private void DrawItemTab()
         {
-            _iscroll = GUILayout.BeginScrollView(_iscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
+            _iscroll = GUILayout.BeginScrollView(_iscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
             Section("Inventory");
             Item.InfiniteItems = Toggle(new GUIContent("Infinite Items", "Keeps item stacks at 10"), Item.InfiniteItems);
@@ -558,7 +572,7 @@ namespace RaftMod
         private Vector2 _wscroll;
         private void DrawWorldTab()
         {
-            _wscroll = GUILayout.BeginScrollView(_wscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
+            _wscroll = GUILayout.BeginScrollView(_wscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
             Section("Time");
             World.AlwaysDay = Toggle(new GUIContent("Always Day", "Forces time to noon"), World.AlwaysDay);
@@ -599,7 +613,7 @@ namespace RaftMod
         private Vector2 _rscroll;
         private void DrawRaftTab()
         {
-            _rscroll = GUILayout.BeginScrollView(_rscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
+            _rscroll = GUILayout.BeginScrollView(_rscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
             Section("Raft Settings");
             InlineSlider("Max Speed", ref Raft.MaxSpeed, 1f, 30f, "");
@@ -624,7 +638,7 @@ namespace RaftMod
         private int _selectedLandmark;
         private void DrawExtraTab()
         {
-            _escroll = GUILayout.BeginScrollView(_escroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
+            _escroll = GUILayout.BeginScrollView(_escroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
             Section("Game Mode");
             var wasCreative = Extra.IsCreativeMode();
@@ -677,7 +691,7 @@ namespace RaftMod
         private Vector2 _cscroll;
         private void DrawControlsTab()
         {
-            _cscroll = GUILayout.BeginScrollView(_cscroll, GUILayout.Width(_windowRect.width - 28), GUILayout.ExpandHeight(true));
+            _cscroll = GUILayout.BeginScrollView(_cscroll, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
             Section("Key Bindings");
             GUILayout.Space(2);
@@ -729,12 +743,11 @@ namespace RaftMod
         private void Section(string title)
         {
             GUILayout.Space(6);
+            var r = GUILayoutUtility.GetRect(new GUIContent(title), _sectionStyle, GUILayout.ExpandWidth(true));
+            GUI.DrawTexture(new Rect(r.x + 4, r.y + 1, 2, r.height - 2), _texAccent);
             var origC = GUI.contentColor;
             GUI.contentColor = TextDim;
-            var style = new GUIStyle(_skin.label) { fontSize = 10, fontStyle = FontStyle.Bold };
-            var r = GUILayoutUtility.GetRect(new GUIContent(title), style, GUILayout.ExpandWidth(true));
-            GUI.DrawTexture(new Rect(r.x + 4, r.y + 2, 2, r.height - 4), _texAccent);
-            GUI.Label(new Rect(r.x + 10, r.y, r.width - 10, r.height), title, style);
+            GUI.Label(new Rect(r.x + 10, r.y, r.width - 10, r.height), title, _sectionStyle);
             GUI.contentColor = origC;
             GUILayout.Space(2);
         }
