@@ -381,7 +381,6 @@ namespace RaftMod
             Add("noclip", "Noclip", "Activer/d\u00e9sactiver le mode vol", KeyCode.None, () => { Player.NoClip = !Player.NoClip; });
             Add("godmode", "Mode Dieu", "Activer/d\u00e9sactiver le mode invincible", KeyCode.None, () => { Player.GodMode = !Player.GodMode; });
             Add("coordinates", "Coordonn\u00e9es", "Afficher/masquer les coordonn\u00e9es", KeyCode.None, () => { Extra.ShowCoordinates = !Extra.ShowCoordinates; });
-            Add("thirdperson", "3e Personne", "Activer/d\u00e9sactiver la cam\u00e9ra 3e personne", KeyCode.None, () => { Extra.ThirdPerson = !Extra.ThirdPerson; });
             Add("infinite_items", "Items Infinis", "Activer/d\u00e9sactiver les objets infinis", KeyCode.None, () => { Item.InfiniteItems = !Item.InfiniteItems; });
             Add("creative", "Mode Cr\u00e9atif", "Activer/d\u00e9sactiver le mode cr\u00e9atif", KeyCode.None, () => { Extra.SetCreativeMode(!Extra.IsCreativeMode()); });
         }
